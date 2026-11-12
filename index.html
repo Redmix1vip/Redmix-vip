@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Redmix VIP - Next-Gen Asset Staking Platform</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Realtime Database SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-deep: #070913;
+            --bg-surface: #101626;
+            --card-gradient: linear-gradient(145deg, rgba(22, 28, 45, 0.95) 0%, rgba(12, 16, 28, 0.98) 100%);
+            --card-border: rgba(255, 45, 85, 0.28);
+            --redmix-primary: #ff2d55;
+            --redmix-glow: rgba(255, 45, 85, 0.4);
+            --gold-gradient: linear-gradient(135deg, #ff4b2b 0%, #ff416c 60%, #ff2d55 100%);
+            --gold-text: #ff3366;
+            --emerald-gradient: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --cyan: #06b6d4;
+            --purple: #8b5cf6;
+            --bkash: #e2136e;
+            --nagad: #f7921e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-sub: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #211327 0%, #0c0f1c 55%, #05070d 100%);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), 0 0 80px rgba(255, 45, 85, 0.12);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding-bottom: 75px;
+        }
+
+        .no-bottom-nav { padding-bottom: 15px !important; }
+
+        /* TOAST NOTIFICATION */
+        #toast {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(16, 22, 38, 0.98);
+            border: 1.5px solid var(--redmix-primary);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), 0 0 18px var(--redmix-glow);
+            z-index: 99999;
+            transition: all 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            width: 88%;
+            max-width: 380px;
+            justify-content: center;
+        }
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* GLOBAL LOADER */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 7, 13, 0.92);
+            z-index: 100000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(8px);
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 45, 85, 0.2);
+            border-top: 4px solid var(--redmix-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* BRAND LOGO */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(16, 22, 36, 0.95);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(14px);
+        }
+
+        .redmix-brand-logo {
+            font-size: 21px;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.3px;
+            user-select: none;
+            cursor: pointer;
+        }
+        .logo-symbol {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--gold-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            box-shadow: 0 0 15px var(--redmix-glow);
+        }
+        .redmix-brand-logo span {
+            background: linear-gradient(135deg, #ffffff 0%, #ff758c 50%, #ff2d55 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .back-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: rgba(255, 45, 85, 0.12);
+            border: 1px solid rgba(255, 45, 85, 0.3);
+            color: var(--redmix-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .back-btn:active { transform: scale(0.94); }
+
+        .wallet-pill {
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.2) 0%, rgba(255, 75, 43, 0.12) 100%);
+            border: 1px solid var(--redmix-primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #ff5277;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(255, 45, 85, 0.25);
+            transition: 0.2s;
+        }
+
+        .lang-toggle-btn {
+            background: rgba(255, 45, 85, 0.12);
+            border: 1px solid var(--redmix-primary);
+            padding: 4px 9px;
+            border-radius: 16px;
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+
+        /* BOTTOM NAVBAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 440px;
+            height: 65px;
+            background: rgba(13, 17, 28, 0.96);
+            border-top: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 150;
+            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.7);
+            padding: 0 4px;
+        }
+
+        .bnav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: var(--text-muted);
+            font-size: 9.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .bnav-item i { font-size: 17px; transition: 0.2s; }
+        .bnav-item.active { color: var(--redmix-primary); }
+        .bnav-item.active i {
+            transform: translateY(-2px);
+            filter: drop-shadow(0 0 8px var(--redmix-glow));
+        }
+
+        /* VIEWS & BOXES */
+        .view {
+            display: none;
+            flex-direction: column;
+            padding: 16px;
+            gap: 14px;
+        }
+
+        .box {
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .box-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .box-title i { color: var(--redmix-primary); }
+
+        /* BUTTONS */
+        .btn-gold {
+            width: 100%;
+            padding: 13px;
+            background: var(--gold-gradient);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            box-shadow: 0 6px 20px var(--redmix-glow);
+            transition: 0.2s;
+        }
+        .btn-gold:active { transform: scale(0.98); }
+
+        .btn-green {
+            width: 100%;
+            padding: 13px;
+            background: var(--emerald-gradient);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+            transition: 0.2s;
+        }
+
+        .btn-red {
+            padding: 6px 12px;
+            background: #e11d48;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .policy {
+            background: rgba(14, 21, 37, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .policy strong { color: var(--redmix-primary); }
+
+        /* PAYMENT METHOD CARDS */
+        .pay-method-card {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.25s;
+            background: rgba(10, 15, 26, 0.85);
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .pay-method-card:hover { transform: translateY(-2px); }
+        .pay-method-card.active-bkash {
+            border-color: #e2136e;
+            background: linear-gradient(135deg, rgba(226, 19, 110, 0.15) 0%, rgba(10, 15, 26, 0.95) 100%);
+            box-shadow: 0 0 16px rgba(226, 19, 110, 0.3);
+        }
+        .pay-method-card.active-nagad {
+            border-color: #f7921e;
+            background: linear-gradient(135deg, rgba(247, 146, 30, 0.15) 0%, rgba(10, 15, 26, 0.95) 100%);
+            box-shadow: 0 0 16px rgba(247, 146, 30, 0.3);
+        }
+        .method-check {
+            margin-left: auto;
+            font-size: 16px;
+            display: none;
+        }
+        .pay-method-card.active-bkash .method-check { display: block; color: #e2136e; }
+        .pay-method-card.active-nagad .method-check { display: block; color: #f7921e; }
+
+        /* WITHDRAW METHOD TOGGLE */
+        .wd-method-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .wd-method-btn {
+            padding: 12px 10px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: #090e1a;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .wd-method-btn.active-bkash {
+            border-color: #e2136e;
+            background: linear-gradient(135deg, rgba(226, 19, 110, 0.2) 0%, rgba(10, 15, 26, 0.95) 100%);
+            color: #fff;
+            box-shadow: 0 0 14px rgba(226, 19, 110, 0.35);
+        }
+        .wd-method-btn.active-nagad {
+            border-color: #f7921e;
+            background: linear-gradient(135deg, rgba(247, 146, 30, 0.2) 0%, rgba(10, 15, 26, 0.95) 100%);
+            color: #fff;
+            box-shadow: 0 0 14px rgba(247, 146, 30, 0.35);
+        }
+
+        /* 24-HOUR NOTICE BOX */
+        .fast-wd-notice {
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.12) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1.5px solid var(--redmix-primary);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            box-shadow: 0 0 18px rgba(255, 45, 85, 0.18);
+        }
+        .fast-wd-notice i {
+            font-size: 24px;
+            color: var(--emerald);
+        }
+        .fast-wd-notice h5 {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #fff;
+        }
+        .fast-wd-notice p {
+            font-size: 10.5px;
+            color: #cbd5e1;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* PRODUCT CARDS */
+        .prod-card {
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .vip-top-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--gold-gradient);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-bottom-left-radius: 12px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px var(--redmix-glow);
+        }
+        .prod-top { display: flex; gap: 12px; align-items: center; }
+        .prod-img { width: 68px; height: 68px; border-radius: 12px; overflow: hidden; background: #000; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .prod-img img { width: 100%; height: 100%; object-fit: cover; }
+        .prod-info h4 { font-size: 14px; font-weight: 800; }
+        .prod-info .price { color: var(--redmix-primary); font-weight: 800; font-size: 14px; margin: 2px 0; }
+        
+        .prod-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            background: rgba(8, 12, 22, 0.9);
+            padding: 8px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 9px;
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .prod-stats strong { display: block; color: #fff; font-size: 11px; margin-top: 2px; }
+
+        /* AUTH VIEW */
+        .auth-wrap {
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 95vh;
+        }
+        .tabs {
+            display: flex;
+            background: rgba(8, 12, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 4px;
+            margin: 16px 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--gold-gradient);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--redmix-glow);
+        }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 5px; font-weight: 600; }
+        .input-wrap { position: relative; }
+        .input-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--redmix-primary); font-size: 13px; }
+        .input-wrap input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            background: rgba(8, 12, 22, 0.9);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-wrap input:focus {
+            border-color: var(--redmix-primary);
+            box-shadow: 0 0 12px var(--redmix-glow);
+        }
+
+        .show-pass-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 7px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .show-pass-wrap input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--redmix-primary);
+        }
+        .show-pass-wrap span { font-size: 11px; color: #cbd5e1; font-weight: 600; }
+
+        /* DASHBOARD */
+        .slider { width: 100%; height: 160px; position: relative; overflow: hidden; border-bottom: 1px solid var(--card-border); }
+        .slides { display: flex; width: 300%; height: 100%; transition: 0.6s ease; }
+        .slide { width: 33.333%; height: 100%; }
+        .slide img { width: 100%; height: 100%; object-fit: cover; }
+        .ticker {
+            background: rgba(16, 22, 36, 0.95);
+            padding: 8px 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            overflow: hidden;
+            white-space: nowrap;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .ticker p { display: inline-block; padding-left: 100%; animation: marq 16s linear infinite; }
+        @keyframes marq { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .act-card {
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .act-card:hover { transform: translateY(-2px); border-color: var(--redmix-primary); }
+        .act-card i {
+            font-size: 20px;
+            color: var(--redmix-primary);
+            margin-bottom: 5px;
+            display: block;
+            filter: drop-shadow(0 0 6px var(--redmix-glow));
+        }
+        .act-card span { font-size: 11px; font-weight: 700; color: #fff; }
+
+        .deposit-amt-box {
+            width: 100%;
+            padding: 14px;
+            background: #0d1527 !important;
+            border: 2px solid var(--redmix-primary) !important;
+            border-radius: 12px;
+            color: #ffffff !important;
+            font-size: 20px !important;
+            font-weight: 800 !important;
+            outline: none;
+            text-align: center;
+            letter-spacing: 1.5px;
+            box-shadow: 0 0 16px var(--redmix-glow);
+        }
+
+        .dep-quick-btn {
+            background: #111a2e;
+            border: 1.5px solid rgba(255, 45, 85, 0.3);
+            color: #ffffff;
+            font-size: 12.5px;
+            font-weight: 800;
+            padding: 11px 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .dep-quick-btn.active, .dep-quick-btn:hover {
+            border-color: var(--redmix-primary);
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.25) 0%, rgba(255, 45, 85, 0.05) 100%);
+            color: var(--redmix-primary);
+        }
+
+        /* MODERN REFERRAL ৳400 CLAIM CARD */
+        .modern-ref-box {
+            background: linear-gradient(145deg, #1b122c 0%, #0d1124 100%);
+            border: 1.5px solid var(--redmix-primary);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 25px var(--redmix-glow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .ref-reward-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 45, 85, 0.15);
+            border: 1px solid var(--redmix-primary);
+            padding: 5px 14px;
+            border-radius: 25px;
+            color: var(--redmix-primary);
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .ref-hero-val {
+            font-size: 32px;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 4px 0 8px;
+        }
+        .ref-counter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0;
+            text-align: left;
+        }
+        .ref-c-card {
+            background: rgba(8, 12, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+        }
+        .ref-c-card span { font-size: 9.5px; color: var(--text-muted); display: block; font-weight: 600; }
+        .ref-c-card strong { font-size: 16px; font-family: 'JetBrains Mono', monospace; color: #fff; margin-top: 3px; display: block; }
+
+        .btn-claim-ref {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-claim-ref.active {
+            background: var(--emerald-gradient);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-claim-ref.disabled {
+            background: #1c2438;
+            color: #64748b;
+            cursor: not-allowed;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .ref-share-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .ref-share-btn {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .btn-wa { background: #25D366; }
+        .btn-tg { background: #0088cc; }
+
+        /* PROFILE */
+        .profile-container {
+            background: linear-gradient(180deg, #1b172a 0%, #0d111d 100%);
+            border: 1.5px solid var(--card-border);
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .user-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .avatar-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--gold-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #ffffff;
+            box-shadow: 0 0 15px var(--redmix-glow);
+        }
+        .profile-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+            font-size: 12px;
+        }
+        .profile-data-row:last-child { border-bottom: none; }
+        .profile-data-row span { color: var(--text-muted); font-weight: 500; }
+        .profile-data-row strong { color: #fff; font-weight: 700; }
+
+        .menu-list-card {
+            background: rgba(19, 25, 38, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .menu-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .menu-row:last-child { border-bottom: none; }
+        .menu-left { display: flex; align-items: center; gap: 12px; color: #e2e8f0; font-weight: 600; }
+        .menu-left i { font-size: 16px; width: 22px; text-align: center; }
+
+        /* MODALS */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 7, 14, 0.9);
+            z-index: 300;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+        }
+        .modal-box {
+            background: #111927;
+            border: 1.5px solid var(--redmix-primary);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 25px var(--redmix-glow);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* ADMIN TERMINAL */
+        .admin-header {
+            background: linear-gradient(90deg, #161226, #22152e);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .admin-kpi-card {
+            background: rgba(16, 22, 38, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+        }
+        .admin-kpi-card span { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .admin-kpi-card h4 { font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 3px; }
+
+        .admin-tab-bar {
+            display: flex;
+            background: #090d16;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .adm-nav-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .adm-nav-btn.active {
+            background: var(--gold-gradient);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--redmix-glow);
+        }
+
+        .admin-user-card {
+            background: linear-gradient(145deg, #131929 0%, #0a0e1c 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 3px solid var(--redmix-primary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .admin-user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+        }
+        .adm-badge {
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .adm-badge-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .adm-badge-blocked { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .adm-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+        .adm-btn-toggle {
+            padding: 7px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL LOADER -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="color:#ff2d55; font-weight:800; font-size:14px;">Connecting to Redmix Secure Server...</p>
+    </div>
+
+    <!-- TOAST POPUP -->
+    <div id="toast"><i class="fa-solid fa-circle-check" style="color:#ff2d55"></i> <span id="toast-txt">Success!</span></div>
+
+    <!-- 1ST TIME NEW USER WELCOME BONUS MODAL (৳380.00 TK) -->
+    <div class="modal" id="m-welcome" style="z-index: 10001;">
+        <div class="modal-box" style="text-align: center; border: 2px solid var(--redmix-primary); background: linear-gradient(180deg, #1e1329 0%, #0c0f1c 100%);">
+            <div style="width: 68px; height: 68px; margin: 0 auto 12px; background: rgba(255, 45, 85, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--redmix-primary); box-shadow: 0 0 20px var(--redmix-glow);">
+                <i class="fa-solid fa-gift"></i>
+            </div>
+            <div style="display:inline-block; background:rgba(255, 45, 85, 0.15); color:var(--redmix-primary); font-size:11px; font-weight:800; padding:4px 14px; border-radius:20px; border:1px solid var(--redmix-primary); margin-bottom:10px;">
+                ✦ REDMIX VIP ASSET ✦
+            </div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;">Welcome to Redmix VIP!</h3>
+            <p style="font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 14px;">
+                Congratulations on activating your official Redmix VIP Account!<br>
+                Claim your exclusive new member registration bonus right now:
+            </p>
+            <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px dashed var(--emerald); border-radius: 12px; padding: 12px; margin-bottom: 18px;">
+                <span style="font-size: 11px; color: #94a3b8; display: block;">Official Member Welcome Gift</span>
+                <strong style="font-size: 26px; color: var(--emerald); font-family: 'JetBrains Mono';">+ ৳380.00</strong>
+            </div>
+            <button class="btn-gold" onclick="claimWelcomeBonus()" style="font-size: 14px; padding: 12px;">
+                <i class="fa-solid fa-hand-holding-dollar"></i> Claim ৳380.00 Gift Now
+            </button>
+        </div>
+    </div>
+
+    <!-- EVENT ANNOUNCEMENT MODAL -->
+    <div class="modal" id="m-event-notice" style="z-index: 10003;">
+        <div class="modal-box" style="text-align:center; border:2px solid var(--redmix-primary); background:linear-gradient(180deg,#1c1228 0%,#0a0e1a 100%); position:relative;">
+            <button class="modal-close" onclick="closeModal('m-event-notice')"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width:65px; height:65px; margin:0 auto 12px; background:rgba(255,45,85,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--redmix-primary); font-size:30px; box-shadow:0 0 20px var(--redmix-glow);">
+                <i class="fa-solid fa-bolt-lightning"></i>
+            </div>
+            <div style="display:inline-block; background:rgba(255,45,85,0.15); color:var(--redmix-primary); font-size:10px; font-weight:800; padding:4px 14px; border-radius:20px; border:1px solid rgba(255,45,85,0.4); margin-bottom:8px; letter-spacing:1px;">
+                ★ REDMIX LAUNCH CARNIVAL ★
+            </div>
+            <h3 style="font-size:18px; font-weight:800; color:#fff; margin-bottom:8px;">Redmix Global Mega Release</h3>
+            <p style="font-size:11.5px; color:#cbd5e1; line-height:1.6; margin-bottom:14px;">
+                Experience automated high-yield daily asset staking with Redmix VIP:
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; text-align:left;">
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,45,85,0.25); border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-gift" style="color:var(--redmix-primary); font-size:16px;"></i>
+                    <div>
+                        <strong style="font-size:11px; color:#fff; display:block;">৳380 Registration Cash Reward</strong>
+                        <span style="font-size:9.5px; color:#94a3b8;">Instantly credited to all newly registered VIP members.</span>
+                    </div>
+                </div>
+
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(52,211,153,0.25); border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-users" style="color:var(--emerald); font-size:16px;"></i>
+                    <div>
+                        <strong style="font-size:11px; color:#fff; display:block;">৳400 Instant Per Active Referral</strong>
+                        <span style="font-size:9.5px; color:#94a3b8;">Earn ৳400 for every direct friend who stakes a VIP product.</span>
+                    </div>
+                </div>
+
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(56,189,248,0.25); border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-shield-halved" style="color:#38bdf8; font-size:16px;"></i>
+                    <div>
+                        <strong style="font-size:11px; color:#fff; display:block;">Guaranteed 24-Hour Payouts</strong>
+                        <span style="font-size:9.5px; color:#94a3b8;">Fast verified withdrawals via bKash and Nagad.</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-gold" onclick="closeModal('m-event-notice')">
+                <i class="fa-solid fa-rocket"></i> Start Staking Now
+            </button>
+        </div>
+    </div>
+
+    <!-- PROFILE SUPPORT MODAL -->
+    <div class="modal" id="m-profile-welcome" style="z-index: 10002;">
+        <div class="modal-box" style="text-align:center; border:2px solid var(--redmix-primary); background:linear-gradient(180deg,#181125 0%,#090d18 100%);">
+            <button class="modal-close" onclick="closeModal('m-profile-welcome')"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width:60px;height:60px;margin:0 auto 12px;background:rgba(255,45,85,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--redmix-primary);font-size:28px">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <h3 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">Redmix Official Helpdesk</h3>
+            <p style="font-size:12.5px;color:#cbd5e1;line-height:1.6;margin-bottom:14px">
+                Need assistance? Our official customer support team is available 24/7.
+            </p>
+            <div style="background:rgba(255,255,255,0.05);border:1px dashed rgba(255,45,85,0.4);border-radius:12px;padding:12px;margin-bottom:16px">
+                <span style="font-size:12px;color:var(--redmix-primary);font-weight:700;display:block;margin-bottom:6px">
+                    Official Telegram Channel:
+                </span>
+                <a href="https://t.me/+z0ufJ8ZITfNhNTZl" target="_blank" style="color:#38bdf8;font-size:11.5px;font-family:'JetBrains Mono';text-decoration:none;word-break:break-all;font-weight:700">
+                    https://t.me/+z0ufJ8ZITfNhNTZl
+                </a>
+            </div>
+            <button class="btn-gold" style="background:#0088cc;color:#fff;box-shadow:0 6px 20px rgba(0,136,204,0.4)" onclick="window.open('https://t.me/+z0ufJ8ZITfNhNTZl','_blank'); closeModal('m-profile-welcome');">
+                <i class="fa-brands fa-telegram"></i> Connect on Telegram
+            </button>
+        </div>
+    </div>
+
+    <!-- SEPARATE INDIVIDUAL USER FILE MODAL (DOSSIER) -->
+    <div class="modal" id="m-user-dossier" style="z-index: 10005;">
+        <div class="modal-box" style="border: 2px solid var(--redmix-primary); max-width: 400px; padding: 18px;" id="m-user-dossier-content"></div>
+    </div>
+
+    <div class="app" id="app">
+
+        <!-- ================= 1. AUTH VIEW ================= -->
+        <div id="view-auth" class="auth-wrap">
+            <div class="box">
+                <div class="redmix-brand-logo" style="justify-content:center;margin-bottom:12px" onclick="checkSecretAdminTap()">
+                    <div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div>
+                    <span>Redmix VIP</span>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" id="t-login" onclick="switchAuth('login')">Login</button>
+                    <button class="tab-btn" id="t-reg" onclick="switchAuth('reg')">Register</button>
+                </div>
+                
+                <!-- LOGIN FORM -->
+                <form id="f-login" onsubmit="handleAuth(event,'login')">
+                    <div class="input-group">
+                        <label>Mobile Number</label>
+                        <div class="input-wrap"><i class="fa-solid fa-phone"></i><input type="tel" id="l-phone" placeholder="01XXXXXXXXX" autocomplete="off" required></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Login Password</label>
+                        <div class="input-wrap"><i class="fa-solid fa-lock"></i><input type="password" id="l-pass" placeholder="Enter password (min 6 chars)" autocomplete="off" required></div>
+                        <div class="show-pass-wrap" onclick="togglePassVisibility()">
+                            <input type="checkbox" id="show-pass-chk">
+                            <label for="show-pass-chk" style="cursor:pointer;font-size:11px;color:#cbd5e1;">Show Password</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-gold" style="margin-top:6px">Access Redmix VIP</button>
+                </form>
+
+                <!-- REGISTRATION FORM -->
+                <form id="f-reg" style="display:none" onsubmit="handleAuth(event,'reg')">
+                    <div class="input-group">
+                        <label>Username (English Name)</label>
+                        <div class="input-wrap"><i class="fa-solid fa-user"></i><input type="text" id="r-name" placeholder="e.g. redmixuser" required></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Mobile Number (One account per phone)</label>
+                        <div class="input-wrap"><i class="fa-solid fa-phone"></i><input type="tel" id="r-phone" placeholder="01XXXXXXXXX" required></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Login Password (Min 6 characters)</label>
+                        <div class="input-wrap"><i class="fa-solid fa-lock"></i><input type="password" id="r-pass" placeholder="At least 6 characters" required></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Payment PIN (6-Digit Code)</label>
+                        <div class="input-wrap"><i class="fa-solid fa-shield-halved"></i><input type="password" id="r-pin" maxlength="6" placeholder="6-digit secret PIN" required></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Invitation Code (Optional)</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-gift" style="color:var(--redmix-primary)"></i>
+                            <input type="text" id="r-invite" placeholder="e.g. REDMIX-582914" style="font-family:'JetBrains Mono';font-weight:700;letter-spacing:1px;color:#38bdf8">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-gold" style="margin-top:10px">Create VIP Account (+৳380 Bonus)</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= 2. DASHBOARD VIEW ================= -->
+        <div id="view-dashboard" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <div class="redmix-brand-logo" id="main-secret-logo" onclick="checkSecretAdminTap()">
+                    <div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div>
+                    <span id="dash-brand-title">Redmix VIP</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <button class="lang-toggle-btn" onclick="toggleLanguage()" title="Switch Language">
+                        <i class="fa-solid fa-globe"></i>
+                        <span id="lang-indicator">EN</span>
+                    </button>
+                    <div class="wallet-pill" onclick="nav('deposit-select')"><i class="fa-solid fa-wallet"></i> <span class="u-bal">৳ 0.00</span></div>
+                    <button class="back-btn" onclick="openModal('m-notif')"><i class="fa-solid fa-bell"></i></button>
+                </div>
+            </div>
+
+            <!-- Auto Image Slider -->
+            <div class="slider"><div class="slides" id="slides">
+                <div class="slide"><img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&q=80" alt="Tech"></div>
+                <div class="slide"><img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80" alt="Crypto Matrix"></div>
+                <div class="slide"><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80" alt="Quantum Circuit"></div>
+            </div></div>
+
+            <div class="ticker">
+                <i class="fa-solid fa-bullhorn" style="color:var(--redmix-primary)"></i>
+                <p id="dash-ticker-txt">Welcome to Redmix VIP! Staking verified global asset computing power with guaranteed daily returns.</p>
+            </div>
+
+            <div class="action-grid">
+                <div class="act-card" onclick="nav('deposit-select')">
+                    <i class="fa-solid fa-wallet"></i><span id="act-btn-dep">Deposit</span>
+                </div>
+                <div class="act-card" onclick="nav('withdraw')">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i><span id="act-btn-wd">Withdraw</span>
+                </div>
+                <div class="act-card" onclick="nav('invite')">
+                    <i class="fa-solid fa-users"></i><span id="act-btn-team">Team</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Announcement Banner -->
+            <div style="background: linear-gradient(135deg, rgba(255,45,85,0.2) 0%, rgba(139,92,246,0.15) 100%); border: 1.5px solid var(--redmix-primary); border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:50%; background:var(--redmix-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <h5 id="flash-sale-title" style="font-size:12.5px; font-weight:800; color:#fff;">REFERRAL REWARD: ৳400 PER ACTIVE MEMBER!</h5>
+                        <p style="font-size:10px; color:#cbd5e1; margin-top:2px;"><span id="flash-sale-sub">Direct instant claim reward for all active stock referrals.</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box-title"><i class="fa-solid fa-microchip"></i> <span id="dash-sec-title">Redmix VIP High-Yield Asset Packages</span></div>
+
+            <!-- DYNAMIC PRODUCT CONTAINER -->
+            <div id="products-container"></div>
+        </div>
+
+        <!-- ================= 3. DEPOSIT SELECT VIEW ================= -->
+        <div id="view-deposit-select" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <button class="back-btn" onclick="nav('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Recharge</span></div>
+                <div style="width:34px"></div>
+            </div>
+
+            <div class="box" style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h4 style="color:var(--redmix-primary);font-size:13px;font-weight:700">Wallet Recharge</h4>
+                    <p style="font-size:10px;color:var(--text-muted)">Select deposit amount (Min: ৳1,000)</p>
+                </div>
+                <div class="wallet-pill"><span class="u-bal">৳ 0.00</span></div>
+            </div>
+
+            <div class="box">
+                <div class="box-title"><i class="fa-solid fa-coins"></i> Choose Deposit Amount</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+                    <button class="dep-quick-btn active" onclick="setAmt(1000)">৳ 1,000</button>
+                    <button class="dep-quick-btn" onclick="setAmt(2500)">৳ 2,500</button>
+                    <button class="dep-quick-btn" onclick="setAmt(5000)">৳ 5,000</button>
+                    <button class="dep-quick-btn" onclick="setAmt(8000)">৳ 8,000</button>
+                    <button class="dep-quick-btn" onclick="setAmt(15000)">৳ 15,000</button>
+                    <button class="dep-quick-btn" onclick="setAmt(25000)">৳ 25,000</button>
+                </div>
+                
+                <input type="number" id="dep-val" class="deposit-amt-box" value="1000">
+                <span id="min-recharge-txt" style="font-size:11px;color:var(--redmix-primary);display:block;margin-top:8px;font-weight:700;text-align:center">
+                    Minimum Recharge Amount: ৳ 1,000.00
+                </span>
+            </div>
+
+            <!-- PAYMENT METHOD SELECTION (bKash & Nagad) -->
+            <div class="box">
+                <div class="box-title"><i class="fa-solid fa-credit-card"></i> Select Gateway Method</div>
+                
+                <div id="method-card-bkash" class="pay-method-card active-bkash" onclick="selectDepositMethod('bKash')">
+                    <div style="width:38px;height:38px;background:#e2136e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff">bK</div>
+                    <div>
+                        <h5 style="font-size:13px;font-weight:800;color:#fff">bKash Personal Send Money</h5>
+                        <p style="font-size:9.5px;color:var(--text-muted)">Instant TrxID Verification Gateway</p>
+                    </div>
+                    <i class="fa-solid fa-circle-check method-check"></i>
+                </div>
+
+                <div id="method-card-nagad" class="pay-method-card" onclick="selectDepositMethod('Nagad')">
+                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#f7921e,#ea1d24);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff">নগদ</div>
+                    <div>
+                        <h5 style="font-size:13px;font-weight:800;color:#fff">Nagad Personal Send Money</h5>
+                        <p style="font-size:9.5px;color:var(--text-muted)">Instant TrxID Verification Gateway</p>
+                    </div>
+                    <i class="fa-solid fa-circle-check method-check"></i>
+                </div>
+            </div>
+
+            <button class="btn-gold" onclick="goToPay()">Proceed to Payment <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+        <!-- ================= 4. DEPOSIT PAY VIEW ================= -->
+        <div id="view-deposit-pay" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <button class="back-btn" onclick="nav('deposit-select')"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Gateway</span></div>
+                <div style="width:34px"></div>
+            </div>
+
+            <div id="pay-header-banner" class="box" style="background:linear-gradient(135deg,#e2136e,#9d0a4c);color:#fff;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h4 id="pay-method-title" style="font-size:14px;font-weight:800">bKash Personal</h4>
+                    <span style="font-size:10px;opacity:0.9">Send Money Gateway</span>
+                </div>
+                <div style="text-align:right">
+                    <span style="font-size:9px;opacity:0.9">Payable Amount:</span>
+                    <h3 id="pay-amt" style="font-size:17px;font-weight:800">৳ 1,000.00</h3>
+                </div>
+            </div>
+
+            <div class="box" style="text-align:center">
+                <div id="pay-method-instruction" style="font-size:12px;margin-bottom:10px;color:#cbd5e1">
+                    Send money to the bKash personal number and input the TrxID below:
+                </div>
+                
+                <div style="display:flex;justify-content:space-between;align-items:center;background:#080d1a;border:1px solid var(--redmix-primary);padding:10px 14px;border-radius:12px;margin-bottom:14px">
+                    <strong id="gw-num" style="font-size:17px;letter-spacing:1px;color:#fff">01400207481</strong>
+                    <button class="btn-gold" style="width:auto;padding:6px 14px;font-size:11px" onclick="copyGatewayNum()">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <div id="pay-trx-label" style="text-align:left;font-size:11px;color:var(--redmix-primary);font-weight:700;margin-bottom:6px">
+                    Enter Send Money TrxID:
+                </div>
+                <input type="text" id="trx-id" placeholder="e.g. BLA49X2M9P" style="width:100%;padding:12px;background:#080d1a;border:2px solid #e2136e;border-radius:10px;color:#fff;text-align:center;font-size:14px;font-weight:800;letter-spacing:1px;margin-bottom:14px;outline:none">
+
+                <button class="btn-green" onclick="submitDeposit()">
+                    <i class="fa-solid fa-shield-check"></i> Submit Deposit Request
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= 5. WITHDRAW VIEW ================= -->
+        <div id="view-withdraw" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <button class="back-btn" onclick="nav('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Withdraw</span></div>
+                <div class="wallet-pill"><span class="u-bal">৳ 0.00</span></div>
+            </div>
+
+            <div id="w-content"></div>
+
+            <!-- 24-HOUR WITHDRAWAL NOTICE BANNER -->
+            <div class="fast-wd-notice">
+                <i class="fa-solid fa-bolt-lightning"></i>
+                <div>
+                    <h5>২৪ ঘন্টার মধ্যে পেমেন্ট নিশ্চয়তা</h5>
+                    <p>আপনার উত্তোলনের অনুরোধ পাঠানোর পর সর্বোচ্চ ২৪ ঘন্টার মধ্যে ভেরিফাইড bKash বা Nagad একাউন্টে টাকা সফলভাবে পৌঁছে যাবে।</p>
+                </div>
+            </div>
+
+            <div class="policy" style="margin-top:6px;">
+                <strong>Withdrawal Policy:</strong> Operating Hours: 12:00 PM – 08:00 PM. Payments are sent directly to verified bKash or Nagad numbers. <strong>Minimum withdrawal: ৳400.00</strong>. Standard platform handling fee applies.
+            </div>
+        </div>
+
+        <!-- ================= 6. TEAM / REFERRAL VIEW (৳400 PER REFERRAL ENGINE) ================= -->
+        <div id="view-invite" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <button class="back-btn" onclick="nav('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Team Referrals</span></div>
+                <div style="width:34px"></div>
+            </div>
+
+            <!-- EXCLUSIVE ৳400 REFERRAL CLAIM CARD -->
+            <div class="modern-ref-box">
+                <div class="ref-reward-tag">
+                    <i class="fa-solid fa-award"></i> REDMIX REFERRAL REWARD
+                </div>
+                <h3 style="font-size:18px;font-weight:800;color:#fff;">প্রতিটি সক্রিয় রেফারে সরাসরি বোনাস</h3>
+                <div class="ref-hero-val">৳ 400.00</div>
+                <p style="font-size:11px;color:#cbd5e1;line-height:1.5;">
+                    বন্ধুকে রেফার করুন! বন্ধু একাউন্ট খুলে যেকোনো VIP পণ্য স্টক করলেই সাথে সাথে পেয়ে যাবেন ৪০০ টাকা নগদ রিওয়ার্ড।
+                </p>
+
+                <div class="ref-counter-grid">
+                    <div class="ref-c-card">
+                        <span>মোট সক্রিয় মেম্বার</span>
+                        <strong id="ref-stat-active" style="color:var(--emerald)">0 জন</strong>
+                    </div>
+                    <div class="ref-c-card">
+                        <span>ক্লেইম করা হয়েছে</span>
+                        <strong id="ref-stat-claimed" style="color:#94a3b8">0 বার</strong>
+                    </div>
+                    <div class="ref-c-card" style="grid-column: span 2; border-color:var(--redmix-primary); background:rgba(255,45,85,0.08);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <span style="color:#ff758c">বর্তমানে ক্লেইম করার জন্য প্রস্তুত:</span>
+                                <strong id="ref-stat-available" style="color:#fff;font-size:18px;margin-top:2px">0 টি (৳0.00)</strong>
+                            </div>
+                            <i class="fa-solid fa-gift" style="font-size:24px;color:var(--redmix-primary)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ref-claim-btn-wrap">
+                    <!-- Dynamic Claim Button injected by JS -->
+                </div>
+            </div>
+
+            <div class="box">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <span style="font-size:11px;color:#94a3b8">My 6-Digit ID:</span>
+                    <strong id="ref-my-id" style="font-size:15px;color:#38bdf8;font-family:'JetBrains Mono'">000000</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <span style="font-size:11px;color:#94a3b8">Redmix Invite Code:</span>
+                    <strong id="ref-code" style="font-size:15px;color:var(--redmix-primary);font-family:'JetBrains Mono'">REDMIX-000000</strong>
+                </div>
+
+                <div style="font-size:10px;color:#94a3b8;margin-bottom:4px">Smart Referral Link:</div>
+                <div style="display:flex;gap:6px;background:#090e1a;border:1px solid rgba(255,45,85,0.3);padding:8px 12px;border-radius:10px">
+                    <input type="text" id="ref-url" readonly style="width:100%;background:none;border:none;color:#38bdf8;font-size:11px;font-weight:700;outline:none;font-family:'JetBrains Mono'">
+                    <button class="btn-gold" style="width:auto;padding:5px 12px;font-size:11px" onclick="copyRef()">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <div class="ref-share-btns">
+                    <button class="ref-share-btn btn-wa" onclick="shareRefWhatsApp()">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp Share
+                    </button>
+                    <button class="ref-share-btn btn-tg" onclick="shareRefTelegram()">
+                        <i class="fa-brands fa-telegram"></i> Telegram Share
+                    </button>
+                </div>
+            </div>
+
+            <div class="box">
+                <div class="box-title"><i class="fa-solid fa-users-viewfinder"></i> Referred Team Members</div>
+                <div id="team-list" style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px">
+                    No team members registered yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 7. PROFILE VIEW ================= -->
+        <div id="view-profile" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Redmix VIP</span></div>
+                <button class="wallet-pill" onclick="nav('invite')"><i class="fa-solid fa-link"></i> Invite Link</button>
+            </div>
+
+            <div class="profile-container">
+                <div class="user-header-info">
+                    <div class="avatar-wrap"><i class="fa-solid fa-user-astronaut"></i></div>
+                    <div>
+                        <h3 id="u-profile-name" style="font-size:16px;font-weight:800;color:#fff;letter-spacing:0.5px">User Name</h3>
+                        <span style="font-size:11px;color:var(--redmix-primary);font-weight:700">Official Redmix VIP Partner</span>
+                    </div>
+                </div>
+
+                <div class="profile-data-row">
+                    <span>User 6-Digit ID</span>
+                    <strong id="u-display-id" style="font-family:'JetBrains Mono';color:#38bdf8">000000</strong>
+                </div>
+
+                <div class="profile-data-row">
+                    <span>Total Account Balance</span>
+                    <strong class="u-bal" style="color:var(--redmix-primary);font-size:15px">৳ 0.00</strong>
+                </div>
+
+                <div class="profile-data-row">
+                    <span>Level</span>
+                    <strong id="u-vip" style="color:#ff2d55">Member (VIP 0)</strong>
+                </div>
+            </div>
+
+            <!-- Profile Menu Items -->
+            <div class="menu-list-card">
+                <div class="menu-row" onclick="openModal('m-signin')">
+                    <div class="menu-left">
+                        <i class="fa-solid fa-calendar-check" style="color:var(--redmix-primary)"></i>
+                        <span>Daily Sign-in Task</span>
+                    </div>
+                    <strong style="font-size:12px;color:var(--emerald)">+৳30.00 Free <i class="fa-solid fa-chevron-right" style="margin-left:4px"></i></strong>
+                </div>
+
+                <div class="menu-row" onclick="openModal('m-notif')">
+                    <div class="menu-left">
+                        <i class="fa-solid fa-chart-line" style="color:var(--redmix-primary)"></i>
+                        <span>Income & Transactions</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color:var(--text-sub);font-size:11px"></i>
+                </div>
+
+                <div class="menu-row" onclick="openModal('m-pass')">
+                    <div class="menu-left"><i class="fa-solid fa-key" style="color:var(--redmix-primary)"></i><span>Change Password</span></div>
+                    <i class="fa-solid fa-chevron-right" style="color:var(--text-sub);font-size:11px"></i>
+                </div>
+
+                <div class="menu-row" onclick="openModal('m-pin')">
+                    <div class="menu-left"><i class="fa-solid fa-shield-halved" style="color:var(--redmix-primary)"></i><span>Change Payment PIN</span></div>
+                    <i class="fa-solid fa-chevron-right" style="color:var(--text-sub);font-size:11px"></i>
+                </div>
+
+                <!-- SUPPORT OPTION -->
+                <div class="menu-row" onclick="window.open('https://t.me/+z0ufJ8ZITfNhNTZl','_blank')">
+                    <div class="menu-left"><i class="fa-brands fa-telegram" style="color:#0088cc"></i><span>Official Telegram Channel</span></div>
+                    <span style="font-size:11px;color:#0088cc;font-weight:700">Join Now <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </div>
+
+                <!-- LIVE AGENT SUPPORT -->
+                <div class="menu-row" onclick="window.open('https://t.me/amazon_matrix','_blank')">
+                    <div class="menu-left"><i class="fa-solid fa-headset" style="color:var(--redmix-primary)"></i><span>Live 24/7 Agent Support</span></div>
+                    <span style="font-size:11px;color:var(--redmix-primary);font-weight:700">Chat Now <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </div>
+            </div>
+
+            <button class="btn-gold" style="background:rgba(244,63,94,0.12);color:var(--rose);border:1px solid rgba(244,63,94,0.3);margin-top:6px" onclick="handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout Account
+            </button>
+        </div>
+
+        <!-- ================= 8. ADVANCED ADMIN TERMINAL ================= -->
+        <div id="view-admin" class="view">
+            <div class="top-navbar" style="margin:-16px -16px 0 -16px">
+                <button class="back-btn" onclick="nav('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="redmix-brand-logo"><div class="logo-symbol"><i class="fa-solid fa-shapes"></i></div> <span>Redmix Terminal</span></div>
+                <button class="btn-red" onclick="nav('dashboard')"><i class="fa-solid fa-power-off"></i> Exit</button>
+            </div>
+
+            <!-- TOP SEARCH BAR FOR ADMIN -->
+            <div style="position:relative;">
+                <input type="text" id="adm-search-input" oninput="renderAdminPanel()" placeholder="Search user by Name, Phone, or 6-Digit ID..." style="width:100%; padding:11px 14px 11px 38px; background:rgba(8,12,22,0.9); border:1.5px solid var(--redmix-primary); border-radius:12px; color:#fff; font-size:12px; outline:none; box-shadow:0 0 12px var(--redmix-glow);">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--redmix-primary); font-size:13px;"></i>
+            </div>
+
+            <div class="admin-header">
+                <div>
+                    <span style="font-size:10px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Global Withdrawal Gateway</span>
+                    <h4 id="adm-wd-status-txt" style="font-size:14px;color:var(--emerald);font-weight:800;margin-top:2px">GATEWAY: ACTIVE</h4>
+                </div>
+                <button id="adm-toggle-wd-btn" class="adm-btn-toggle" style="background:#e11d48;color:#fff;padding:8px 12px" onclick="toggleWithdrawStatus()">
+                    <i class="fa-solid fa-ban"></i> Disable Global
+                </button>
+            </div>
+
+            <div class="admin-kpi-grid">
+                <div class="admin-kpi-card">
+                    <span>Active Users</span>
+                    <h4 id="adm-user-cnt" style="color:#38bdf8">0</h4>
+                </div>
+                <div class="admin-kpi-card">
+                    <span>Pending Deposits</span>
+                    <h4 id="adm-dep-cnt" style="color:var(--redmix-primary)">0</h4>
+                </div>
+                <div class="admin-kpi-card">
+                    <span>Pending Payouts</span>
+                    <h4 id="adm-wd-cnt" style="color:var(--rose)">0</h4>
+                </div>
+            </div>
+
+            <div class="admin-tab-bar">
+                <button class="adm-nav-btn active" id="at-dep" onclick="switchAdminTab('dep')"><i class="fa-solid fa-wallet"></i> Deposits</button>
+                <button class="adm-nav-btn" id="at-wd" onclick="switchAdminTab('wd')"><i class="fa-solid fa-money-bill-transfer"></i> Withdrawals</button>
+                <button class="adm-nav-btn" id="at-users" onclick="switchAdminTab('users')"><i class="fa-solid fa-users-gear"></i> User Manager</button>
+            </div>
+
+            <div id="adm-content" style="max-height:60vh;overflow-y:auto;padding-bottom:20px"></div>
+        </div>
+
+        <!-- ================= BOTTOM NAVIGATION (CLEAN 5 ITEMS) ================= -->
+        <div class="bottom-nav" id="bot-nav">
+            <div class="bnav-item active" id="bn-dashboard" onclick="nav('dashboard')"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="bnav-item" id="bn-deposit-select" onclick="nav('deposit-select')"><i class="fa-solid fa-wallet"></i><span>Deposit</span></div>
+            <div class="bnav-item" id="bn-withdraw" onclick="nav('withdraw')"><i class="fa-solid fa-money-bill-transfer"></i><span>Withdraw</span></div>
+            <div class="bnav-item" id="bn-invite" onclick="nav('invite')"><i class="fa-solid fa-users"></i><span>Team</span></div>
+            <div class="bnav-item" id="bn-profile" onclick="nav('profile')"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+        </div>
+
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal" id="m-signin"><div class="modal-box" style="text-align:center">
+        <button class="modal-close" onclick="closeModal('m-signin')"><i class="fa-solid fa-xmark"></i></button>
+        <div style="width:50px;height:50px;margin:0 auto 10px;background:rgba(255,45,85,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--redmix-primary);font-size:22px">
+            <i class="fa-solid fa-gift"></i>
+        </div>
+        <h4 style="color:var(--redmix-primary);margin-bottom:8px">Daily Sign-in Reward</h4>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Check-in once per day to receive a free ৳30.00 cash reward added directly to your account balance.</p>
+        <button class="btn-green" onclick="claimDaily()">Claim ৳30.00 Free Cash</button>
+    </div></div>
+
+    <div class="modal" id="m-pass"><div class="modal-box">
+        <button class="modal-close" onclick="closeModal('m-pass')"><i class="fa-solid fa-xmark"></i></button>
+        <h4 style="color:var(--redmix-primary);margin-bottom:12px">Change Login Password</h4>
+        <div class="input-group">
+            <label>Previous Password</label>
+            <input type="password" id="old-p" placeholder="Enter current password" style="width:100%;padding:10px;background:#080d1a;border:1px solid var(--card-border);border-radius:8px;color:#fff;outline:none">
+        </div>
+        <div class="input-group">
+            <label>New Password (Min 6 characters)</label>
+            <input type="password" id="new-p" placeholder="Enter at least 6 characters" style="width:100%;padding:10px;background:#080d1a;border:1px solid var(--card-border);border-radius:8px;color:#fff;outline:none">
+        </div>
+        <button class="btn-gold" style="margin-top:8px" onclick="updatePass('password')">Update Password</button>
+    </div></div>
+
+    <div class="modal" id="m-pin"><div class="modal-box">
+        <button class="modal-close" onclick="closeModal('m-pin')"><i class="fa-solid fa-xmark"></i></button>
+        <h4 style="color:var(--redmix-primary);margin-bottom:12px">Change Payment PIN</h4>
+        <div class="input-group">
+            <label>Current PIN</label>
+            <input type="password" id="old-pin" maxlength="6" placeholder="Enter old 6-digit PIN" style="width:100%;padding:10px;background:#080d1a;border:1px solid var(--card-border);border-radius:8px;color:#fff;outline:none">
+        </div>
+        <div class="input-group">
+            <label>New 6-Digit PIN</label>
+            <input type="password" id="new-pin" maxlength="6" placeholder="Enter new 6-digit PIN" style="width:100%;padding:10px;background:#080d1a;border:1px solid var(--card-border);border-radius:8px;color:#fff;outline:none">
+        </div>
+        <button class="btn-gold" style="margin-top:8px" onclick="updatePass('pin')">Save Payment PIN</button>
+    </div></div>
+
+    <div class="modal" id="m-notif"><div class="modal-box">
+        <button class="modal-close" onclick="closeModal('m-notif')"><i class="fa-solid fa-xmark"></i></button>
+        <h4 style="color:var(--redmix-primary);margin-bottom:12px"><i class="fa-solid fa-receipt"></i> Income & Transactions History</h4>
+        <div id="tx-list" style="font-size:11px;color:var(--text-muted);max-height:260px;overflow-y:auto">
+            No transaction records found.
+        </div>
+    </div></div>
+
+    <!-- ================= JAVASCRIPT CONTROLLER ================= -->
+    <script>
+        // Completely Fresh Database Namespace for Redmix VIP (Clears all previous data)
+        const DB_PREFIX = 'REDMIX_VIP_LIVE_V3_';
+        
+        function cleanPhone(raw) {
+            if(!raw) return '';
+            let p = raw.toString().replace(/[^0-9]/g, '');
+            if(p.startsWith('880')) p = '0' + p.substring(3);
+            else if(p.startsWith('88')) p = p.substring(2);
+            return p.trim();
+        }
+
+        function getDB(k, d) {
+            try {
+                const v = localStorage.getItem(DB_PREFIX + k);
+                return v ? JSON.parse(v) : d;
+            } catch(e) { return d; }
+        }
+        function setDB(k, v) {
+            try { localStorage.setItem(DB_PREFIX + k, JSON.stringify(v)); } catch(e){}
+            syncCloud(k, v);
+        }
+
+        // Central Cloud Database
+        let fbDB = null;
+        try {
+            const firebaseConfig = {
+                databaseURL: "https://investment-ea644-default-rtdb.firebaseio.com"
+            };
+            if(!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+            fbDB = firebase.database();
+        } catch(e) { console.warn("Cloud connection error:", e); }
+
+        function syncCloud(key, data) {
+            if(fbDB) {
+                try { fbDB.ref('REDMIX_' + key).set(data).catch(() => {}); } catch(e){}
+            }
+        }
+
+        if(fbDB) {
+            fbDB.ref('REDMIX_USERS').on('value', snap => {
+                const val = snap.val();
+                if(val) {
+                    localStorage.setItem(DB_PREFIX + 'USERS', JSON.stringify(val));
+                    if(document.getElementById('view-admin').style.display === 'flex') renderAdminPanel();
+                    if(currentUserPhone && val[currentUserPhone]) syncUI();
+                }
+            });
+
+            fbDB.ref('REDMIX_TRANSACTIONS').on('value', snap => {
+                const val = snap.val();
+                if(val) {
+                    localStorage.setItem(DB_PREFIX + 'TRANSACTIONS', JSON.stringify(val));
+                    if(document.getElementById('view-admin').style.display === 'flex') renderAdminPanel();
+                    renderTxList();
+                }
+            });
+
+            fbDB.ref('REDMIX_SETTINGS').on('value', snap => {
+                const val = snap.val();
+                if(val) localStorage.setItem(DB_PREFIX + 'SETTINGS', JSON.stringify(val));
+            });
+        }
+
+        // ================= LANGUAGE TOGGLE SYSTEM =================
+        let currentLang = localStorage.getItem(DB_PREFIX + 'LANG') || 'BN';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'EN' ? 'BN' : 'EN';
+            localStorage.setItem(DB_PREFIX + 'LANG', currentLang);
+            updateLanguageUI();
+            showToast(currentLang === 'BN' ? 'ভাষা বাংলায় পরিবর্তন করা হয়েছে' : 'Language switched to English');
+        }
+
+        function updateLanguageUI() {
+            const ind = document.getElementById('lang-indicator');
+            if(ind) ind.textContent = currentLang;
+
+            const ticker = document.getElementById('dash-ticker-txt');
+            const bDep = document.getElementById('act-btn-dep');
+            const bWd = document.getElementById('act-btn-wd');
+            const bTeam = document.getElementById('act-btn-team');
+            const secTitle = document.getElementById('dash-sec-title');
+            const minRecharge = document.getElementById('min-recharge-txt');
+
+            if(currentLang === 'BN') {
+                if(ticker) ticker.textContent = 'Redmix VIP প্ল্যাটফর্মে স্বাগতম! উচ্চ ক্ষমতার ক্লাউড অ্যাসেট স্টকিং ও নিশ্চিত দৈনিক প্রফিট গ্রহণ করুন।';
+                if(bDep) bDep.textContent = 'রিচার্জ';
+                if(bWd) bWd.textContent = 'উত্তোলন';
+                if(bTeam) bTeam.textContent = 'টিম';
+                if(secTitle) secTitle.textContent = 'Redmix VIP অ্যাসেট ও দৈনিক লাভ';
+                if(minRecharge) minRecharge.textContent = 'সর্বনিম্ন রিচার্জ পরিমাণ: ৳ ১,০০০.০০';
+            } else {
+                if(ticker) ticker.textContent = 'Welcome to Redmix VIP! Staking verified global asset computing power with guaranteed daily returns.';
+                if(bDep) bDep.textContent = 'Deposit';
+                if(bWd) bWd.textContent = 'Withdraw';
+                if(bTeam) bTeam.textContent = 'Team';
+                if(secTitle) secTitle.textContent = 'Redmix VIP High-Yield Asset Packages';
+                if(minRecharge) minRecharge.textContent = 'Minimum Recharge Amount: ৳ 1,000.00';
+            }
+            renderProducts();
+            if(document.getElementById('view-withdraw').style.display === 'flex') renderWithdraw();
+            if(document.getElementById('view-invite').style.display === 'flex') renderInvite();
+        }
+
+        // State Variables
+        let currentUserPhone = cleanPhone(localStorage.getItem(DB_PREFIX + 'CURRENT_USER') || '');
+        let activeAdminTab = 'dep';
+        let timerIntervals = {};
+        let selectedDepositMethod = 'bKash';
+        let selectedWithdrawMethod = 'bKash';
+
+        function generateUniqueIdCode(usersDB) {
+            let id;
+            do {
+                id = Math.floor(100000 + Math.random() * 900000).toString();
+            } while (Object.values(usersDB).some(u => u && u.idCode === id));
+            return id;
+        }
+
+        // Capture Referral params
+        const urlParams = new URLSearchParams(window.location.search);
+        const refUrlParam = urlParams.get('redmix_invite') || urlParams.get('ref') || urlParams.get('inv') || '';
+        if(refUrlParam) {
+            sessionStorage.setItem('REDMIX_PENDING_REF_CODE', refUrlParam);
+            const usersDB = getDB('USERS', {});
+            for(let ph in usersDB) {
+                if(usersDB[ph] && (usersDB[ph].inviteCode === refUrlParam || usersDB[ph].idCode === refUrlParam || ph === refUrlParam)) {
+                    sessionStorage.setItem('REDMIX_PENDING_REF_LEADER', ph);
+                    break;
+                }
+            }
+        }
+
+        // Secret Admin Access (3 fast taps on Logo -> PIN: 2564)
+        let logoTapCount = 0, lastTapTime = 0;
+        function checkSecretAdminTap() {
+            const now = Date.now();
+            if(now - lastTapTime < 600) { logoTapCount++; } else { logoTapCount = 1; }
+            lastTapTime = now;
+            if(logoTapCount === 3) {
+                logoTapCount = 0;
+                const pass = prompt('🔐 Enter Redmix Admin Security PIN:');
+                if(pass === '2564') {
+                    showToast('Admin Terminal Unlocked');
+                    nav('admin');
+                } else if(pass !== null) {
+                    alert('Invalid Security Code!');
+                }
+            }
+        }
+
+        function togglePassVisibility() {
+            const pInput = document.getElementById('l-pass');
+            const chk = document.getElementById('show-pass-chk');
+            if (pInput.type === "password") {
+                pInput.type = "text";
+                chk.checked = true;
+            } else {
+                pInput.type = "password";
+                chk.checked = false;
+            }
+        }
+
+        function copyText(str, msg) {
+            const ta = document.createElement('textarea');
+            ta.value = str;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); showToast(msg || 'Copied successfully!'); } 
+            catch(e) { prompt('Copy to clipboard:', str); }
+            document.body.removeChild(ta);
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-txt').textContent = m;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2800);
+        }
+
+        function syncUI() {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser) return;
+
+            const bal = Number(curUser.bal || 0);
+            const f = `৳ ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.querySelectorAll('.u-bal').forEach(el => el.textContent = f);
+
+            const uProfileName = document.getElementById('u-profile-name'); if(uProfileName) uProfileName.textContent = curUser.name || 'User';
+            const uDisplayId = document.getElementById('u-display-id'); if(uDisplayId) uDisplayId.textContent = curUser.idCode || '000000';
+            const refMyId = document.getElementById('ref-my-id'); if(refMyId) refMyId.textContent = curUser.idCode || '000000';
+            
+            const vip = document.getElementById('u-vip');
+            const inv = curUser.investments || {};
+            const keys = Object.keys(inv).filter(k => inv[k]);
+            if(vip) {
+                vip.textContent = keys.length ? `VIP Level ${keys[keys.length - 1]}` : 'Member (VIP 0)';
+                vip.style.color = keys.length ? 'var(--emerald)' : '#ff2d55';
+            }
+
+            renderProducts();
+        }
+
+        function nav(v) {
+            if(currentUserPhone && v !== 'auth' && v !== 'admin') {
+                const usersDB = getDB('USERS', {});
+                if(usersDB[currentUserPhone] && usersDB[currentUserPhone].blocked) {
+                    alert('⚠️ Your account has been temporarily suspended!');
+                    handleLogout();
+                    return;
+                }
+            }
+
+            document.querySelectorAll('.view, .auth-wrap').forEach(e => e.style.display = 'none');
+            const target = document.getElementById(`view-${v}`);
+            if(target) target.style.display = 'flex';
+            
+            const bNav = document.getElementById('bot-nav');
+            const app = document.getElementById('app');
+            if(v === 'auth' || v === 'deposit-pay' || v === 'admin') {
+                bNav.style.display = 'none';
+                app.classList.add('no-bottom-nav');
+            } else {
+                bNav.style.display = 'flex';
+                app.classList.remove('no-bottom-nav');
+            }
+            
+            document.querySelectorAll('.bnav-item').forEach(e => e.classList.remove('active'));
+            const cur = document.getElementById(`bn-${v}`);
+            if(cur) cur.classList.add('active');
+
+            if(v === 'withdraw') renderWithdraw();
+            if(v === 'invite') renderInvite();
+            if(v === 'admin') renderAdminPanel();
+
+            if(v === 'profile') {
+                setTimeout(() => { openModal('m-profile-welcome'); }, 300);
+            }
+
+            if(v === 'dashboard') {
+                const usersDB = getDB('USERS', {});
+                const curUser = usersDB[currentUserPhone];
+                if(curUser && curUser.welcomeBonusClaimed === false) {
+                    setTimeout(() => { openModal('m-welcome'); }, 400);
+                } else if(curUser) {
+                    setTimeout(() => { openModal('m-event-notice'); }, 450);
+                }
+            }
+
+            syncUI();
+            window.scrollTo(0,0);
+        }
+
+        // WELCOME BONUS (৳380.00 TK)
+        function claimWelcomeBonus() {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser) return;
+
+            curUser.bal = +(Number(curUser.bal || 0) + 380.00).toFixed(2);
+            curUser.welcomeBonusClaimed = true;
+            usersDB[currentUserPhone] = curUser;
+            setDB('USERS', usersDB);
+
+            addTx('bonus', 'Redmix VIP Welcome Gift', '+ ৳380.00', 'approved');
+            closeModal('m-welcome');
+            syncUI();
+            showToast('🎉 Congratulations! ৳380.00 Welcome Reward added to your balance!');
+
+            setTimeout(() => { openModal('m-event-notice'); }, 600);
+        }
+
+        function switchAuth(t) {
+            document.getElementById('t-login').classList.toggle('active', t === 'login');
+            document.getElementById('t-reg').classList.toggle('active', t === 'reg');
+            document.getElementById('f-login').style.display = t === 'login' ? 'block' : 'none';
+            document.getElementById('f-reg').style.display = t === 'reg' ? 'block' : 'none';
+
+            const pendingCode = sessionStorage.getItem('REDMIX_PENDING_REF_CODE') || '';
+            const inviteInput = document.getElementById('r-invite');
+            if(inviteInput && pendingCode) inviteInput.value = pendingCode;
+        }
+
+        function handleAuth(e, type) {
+            if(e) e.preventDefault();
+            const usersDB = getDB('USERS', {});
+
+            if(type === 'reg') {
+                const name = document.getElementById('r-name').value.trim();
+                const phone = cleanPhone(document.getElementById('r-phone').value);
+                const pass = document.getElementById('r-pass').value.trim();
+                const pin = document.getElementById('r-pin').value.trim();
+                const inviteCodeInput = document.getElementById('r-invite').value.trim();
+
+                if(!name) { alert('Please enter your full name in English.'); return; }
+                if(phone.length < 11) { alert('Please enter a valid 11-digit mobile number.'); return; }
+                if(pass.length < 6) { alert('Login password must be at least 6 characters long!'); return; }
+                if(pin.length < 6) { alert('Payment password must be a 6-digit PIN!'); return; }
+
+                if(usersDB[phone]) {
+                    alert('⚠️ An account already exists with this phone number! Please login.');
+                    switchAuth('login');
+                    document.getElementById('l-phone').value = phone;
+                    return;
+                }
+
+                let refLeader = sessionStorage.getItem('REDMIX_PENDING_REF_LEADER') || '';
+                if(!refLeader && inviteCodeInput) {
+                    for(let ph in usersDB) {
+                        if(usersDB[ph] && (usersDB[ph].inviteCode === inviteCodeInput || usersDB[ph].idCode === inviteCodeInput || ph === inviteCodeInput)) {
+                            refLeader = ph;
+                            break;
+                        }
+                    }
+                }
+
+                const my6DigitId = generateUniqueIdCode(usersDB);
+                const myInviteCode = `REDMIX-${my6DigitId}`;
+
+                usersDB[phone] = {
+                    name: name,
+                    phone: phone,
+                    pass: pass,
+                    pin: pin,
+                    bal: 0.00,
+                    idCode: my6DigitId,
+                    inviteCode: myInviteCode,
+                    leader: refLeader,
+                    blocked: false,
+                    withdrawAllowed: true,
+                    welcomeBonusClaimed: false,
+                    claimedRefRewardsCount: 0,
+                    investments: {},
+                    registeredAt: new Date().toLocaleString('en-GB')
+                };
+                setDB('USERS', usersDB);
+
+                currentUserPhone = phone;
+                localStorage.setItem(DB_PREFIX + 'CURRENT_USER', phone);
+
+                document.getElementById('l-phone').value = phone;
+                document.getElementById('l-pass').value = pass;
+                document.getElementById('f-reg').reset();
+
+                showToast('✅ Account registered successfully!');
+                nav('dashboard');
+
+            } else {
+                const phone = cleanPhone(document.getElementById('l-phone').value);
+                const pass = document.getElementById('l-pass').value.trim();
+
+                if(!phone || phone.length < 11) {
+                    alert('Please enter a valid 11-digit mobile number!');
+                    return;
+                }
+
+                if(!usersDB[phone]) {
+                    alert('❌ No Redmix account found with this phone number! Please Register.');
+                    switchAuth('reg');
+                    document.getElementById('r-phone').value = phone;
+                    return;
+                }
+
+                if(usersDB[phone].blocked) {
+                    alert('⚠️ Your account has been temporarily blocked. Please contact support.');
+                    return;
+                }
+
+                if(usersDB[phone].pass !== pass) {
+                    alert('❌ Incorrect password! Please verify and try again.');
+                    return;
+                }
+
+                currentUserPhone = phone;
+                localStorage.setItem(DB_PREFIX + 'CURRENT_USER', phone);
+                showToast('Login successful!');
+                nav('dashboard');
+            }
+        }
+
+        function handleLogout() {
+            currentUserPhone = '';
+            localStorage.removeItem(DB_PREFIX + 'CURRENT_USER');
+            nav('auth');
+            switchAuth('login');
+        }
+
+        // ================= 7 REDMIX VIP PRODUCTS =================
+        const PRODUCTS_LIST = [
+            { id: 1, vip: 'VIP 1', name: 'Redmix Core Node X1', price: 1000, profit: 200, rate: '20.00%', total365: '৳73,000', img: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=150&q=80' },
+            { id: 2, vip: 'VIP 2', name: 'Redmix Cyber Matrix X2', price: 2500, profit: 850, rate: '34.00%', total365: '৳3,10,250', img: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=150&q=80' },
+            { id: 3, vip: 'VIP 3', name: 'Redmix Quantum Server X3', price: 5000, profit: 1800, rate: '36.00%', total365: '৳6,57,000', img: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150&q=80' },
+            { id: 4, vip: 'VIP 4', name: 'Redmix Alpha Reactor X4', price: 8000, profit: 2800, rate: '35.00%', total365: '৳10,22,000', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=150&q=80' },
+            { id: 5, vip: 'VIP 5', name: 'Redmix Apex Cluster X5', price: 15000, profit: 5000, rate: '33.33%', total365: '৳18,25,000', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=150&q=80' },
+            { id: 6, vip: 'VIP 6', name: 'Redmix Titan Supercomputer X6', price: 25000, profit: 8500, rate: '34.00%', total365: '৳31,02,500', img: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=150&q=80' },
+            { id: 7, vip: 'VIP 7', name: 'Redmix Infinity Matrix Hub X7', price: 50000, profit: 20000, rate: '40.00%', total365: '৳73,00,000', img: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=150&q=80' }
+        ];
+
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            if(!container) return;
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone] || {};
+
+            let html = '';
+            PRODUCTS_LIST.forEach(p => {
+                const userInvestment = (curUser.investments && curUser.investments[p.id]) ? curUser.investments[p.id] : null;
+
+                html += `
+                <div class="prod-card">
+                    <div class="vip-top-badge">${p.vip}</div>
+                    <div class="prod-top">
+                        <div class="prod-img"><img src="${p.img}" alt="${p.name}"></div>
+                        <div class="prod-info">
+                            <h4>${p.name}</h4>
+                            <div class="price">
+                                <span>৳ ${p.price.toLocaleString('en-IN')}.00</span>
+                            </div>
+                            <span style="font-size:10px;color:var(--text-muted)">${currentLang === 'BN' ? 'দৈনিক আয়' : 'Daily Profit'}: ৳${p.profit.toLocaleString('en-IN')}.00 (${p.rate})</span>
+                        </div>
+                    </div>
+                    <div class="prod-stats">
+                        <div>${currentLang === 'BN' ? 'দৈনিক' : 'Daily'}<strong>৳${p.profit}</strong></div>
+                        <div>${currentLang === 'BN' ? 'হার' : 'Rate'}<strong style="color:var(--emerald)">${p.rate}</strong></div>
+                        <div>${currentLang === 'BN' ? 'মোট (৩৬৫ দিন)' : 'Total (365d)'}<strong style="color:var(--redmix-primary)">${p.total365}</strong></div>
+                    </div>
+                    <div id="p-act-${p.id}">
+                        ${!userInvestment ? `
+                            <button class="btn-gold" onclick="buy(${p.id})">
+                                <i class="fa-solid fa-cart-shopping"></i> ${currentLang === 'BN' ? 'পণ্য স্টক করুন' : 'Stake Asset'} (৳${p.price.toLocaleString('en-IN')})
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+
+            PRODUCTS_LIST.forEach(p => {
+                if(curUser.investments && curUser.investments[p.id]) {
+                    startTimer(p.id);
+                }
+            });
+        }
+
+        function buy(id) {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser) return;
+
+            const p = PRODUCTS_LIST.find(x => x.id === id);
+            if(!p) return;
+
+            if(Number(curUser.bal || 0) < p.price) {
+                showToast(`⚠️ Insufficient balance! Please deposit ৳${p.price}.`);
+                document.getElementById('dep-val').value = p.price;
+                nav('deposit-select');
+                return;
+            }
+
+            if(confirm(`Do you wish to stake "${p.name}" for ৳${p.price.toLocaleString('en-IN')}?`)) {
+                curUser.bal = +(Number(curUser.bal || 0) - p.price).toFixed(2);
+                if(!curUser.investments || typeof curUser.investments !== 'object') curUser.investments = {};
+                curUser.investments[id] = { 
+                    name: p.name, 
+                    profit: p.profit, 
+                    exp: Date.now() + 24*3600*1000,
+                    status: 'active'
+                };
+                usersDB[currentUserPhone] = curUser;
+                setDB('USERS', usersDB);
+                
+                addTx('buy', `Asset Staked (${p.name})`, `- ৳${p.price}`, 'approved');
+                syncUI();
+                showToast('🎉 Asset successfully staked!');
+            }
+        }
+
+        function claimProfit(id) {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser || !curUser.investments || !curUser.investments[id]) return;
+
+            const p = curUser.investments[id];
+            if(p.status === 'paused') {
+                alert('⚠️ This product is currently suspended by administration. Profit claim is paused.');
+                return;
+            }
+
+            curUser.bal = +(Number(curUser.bal || 0) + p.profit).toFixed(2);
+            p.exp = Date.now() + 24*3600*1000;
+            addTx('profit', `Daily Yield (${p.name})`, `+ ৳${p.profit}`, 'approved');
+
+            // 15% Daily commission to upline
+            if(curUser.leader && usersDB[curUser.leader]) {
+                const commission = +(p.profit * 0.15).toFixed(2);
+                if(commission > 0) {
+                    usersDB[curUser.leader].bal = +(Number(usersDB[curUser.leader].bal || 0) + commission).toFixed(2);
+                    addSpecificTx(curUser.leader, 'commission', `Referral Commission 15% (ID: ${curUser.idCode})`, `+ ৳${commission}`, 'approved');
+                }
+            }
+
+            usersDB[currentUserPhone] = curUser;
+            setDB('USERS', usersDB);
+            syncUI();
+            showToast(`🎉 Profit +৳${p.profit} added to balance!`);
+        }
+
+        function startTimer(id) {
+            const wrap = document.getElementById(`p-act-${id}`);
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser || !curUser.investments || !curUser.investments[id] || !wrap) return;
+
+            if(timerIntervals[id]) clearInterval(timerIntervals[id]);
+            const p = curUser.investments[id];
+
+            if(p.status === 'paused') {
+                wrap.innerHTML = `<div style="background:rgba(244,63,94,0.15);color:var(--rose);border:1px solid rgba(244,63,94,0.3);padding:9px;border-radius:10px;text-align:center;font-size:11px;font-weight:700"><i class="fa-solid fa-circle-pause"></i> Staking Suspended by Admin</div>`;
+                return;
+            }
+
+            function update() {
+                const diff = p.exp - Date.now();
+                if(diff <= 0) {
+                    wrap.innerHTML = `<button class="btn-green" onclick="claimProfit(${id})"><i class="fa-solid fa-gift"></i> ${currentLang === 'BN' ? 'মুনাফা গ্রহণ করুন' : 'CLAIM PROFIT'} (৳${p.profit})</button>`;
+                    clearInterval(timerIntervals[id]);
+                } else {
+                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                    wrap.innerHTML = `<div style="background:rgba(255,45,85,0.1);color:var(--redmix-primary);border:1px solid rgba(255,45,85,0.3);padding:7px;border-radius:10px;text-align:center;font-size:11px;font-weight:700"><i class="fa-regular fa-clock"></i> Next Claim: ${h}h ${m}m ${s}s</div>`;
+                }
+            }
+            update();
+            timerIntervals[id] = setInterval(update, 1000);
+        }
+
+        // ================= DEPOSIT CONTROLLER =================
+        function selectDepositMethod(method) {
+            selectedDepositMethod = method;
+            const bCard = document.getElementById('method-card-bkash');
+            const nCard = document.getElementById('method-card-nagad');
+            if(bCard && nCard) {
+                bCard.classList.toggle('active-bkash', method === 'bKash');
+                nCard.classList.toggle('active-nagad', method === 'Nagad');
+            }
+        }
+
+        function setAmt(a) {
+            document.getElementById('dep-val').value = a;
+            document.querySelectorAll('.dep-quick-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.includes(a.toLocaleString()));
+            });
+        }
+        
+        function goToPay() {
+            const v = parseFloat(document.getElementById('dep-val').value);
+            if(!v || v < 1000) { alert('Minimum deposit amount is ৳ 1,000'); return; }
+            
+            document.getElementById('pay-amt').textContent = `৳ ${v.toFixed(2)}`;
+            
+            const banner = document.getElementById('pay-header-banner');
+            const title = document.getElementById('pay-method-title');
+            const inst = document.getElementById('pay-method-instruction');
+            const trxInput = document.getElementById('trx-id');
+            const trxLabel = document.getElementById('pay-trx-label');
+            
+            if(selectedDepositMethod === 'Nagad') {
+                banner.style.background = 'linear-gradient(135deg, #f7921e, #ea1d24)';
+                title.textContent = 'Nagad Personal';
+                inst.textContent = 'Send money to the Nagad personal number and input the TrxID below:';
+                trxInput.style.borderColor = '#f7921e';
+                trxLabel.textContent = 'Enter Nagad Send Money TrxID:';
+            } else {
+                banner.style.background = 'linear-gradient(135deg, #e2136e, #9d0a4c)';
+                title.textContent = 'bKash Personal';
+                inst.textContent = 'Send money to the bKash personal number and input the TrxID below:';
+                trxInput.style.borderColor = '#e2136e';
+                trxLabel.textContent = 'Enter bKash Send Money TrxID:';
+            }
+            
+            nav('deposit-pay');
+        }
+
+        function copyGatewayNum() {
+            const num = document.getElementById('gw-num').textContent;
+            copyText(num, `✅ ${selectedDepositMethod} number copied to clipboard!`);
+        }
+
+        function submitDeposit() {
+            const trx = document.getElementById('trx-id').value.trim();
+            if(!trx || trx.length < 5) {
+                showToast(`⚠️ Please enter a valid ${selectedDepositMethod} TrxID!`);
+                return;
+            }
+            const v = parseFloat(document.getElementById('dep-val').value) || 1000;
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                addTx('deposit', `${selectedDepositMethod} Deposit (Trx: ${trx})`, `+ ৳${v}`, 'pending', {
+                    userPhone: currentUserPhone,
+                    amountNum: v,
+                    trxId: trx,
+                    method: selectedDepositMethod
+                });
+
+                document.getElementById('trx-id').value = '';
+                showToast(`${selectedDepositMethod} deposit request submitted successfully!`);
+                setTimeout(() => nav('dashboard'), 1000);
+            }, 1800);
+        }
+
+        // ================= WITHDRAW CONTROLLER (MIN ৳400) =================
+        function setWithdrawMethod(m) {
+            selectedWithdrawMethod = m;
+            renderWithdraw();
+        }
+
+        function renderWithdraw() {
+            const box = document.getElementById('w-content');
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone] || {};
+            const settings = getDB('SETTINGS', { withdrawEnabled: true });
+
+            if(!settings.withdrawEnabled) {
+                box.innerHTML = `<div class="box" style="text-align:center;border-color:var(--rose)"><h4 style="color:var(--rose)">Withdrawal Gateway Temporarily Closed</h4></div>`;
+                return;
+            }
+
+            if(curUser.withdrawAllowed === false) {
+                box.innerHTML = `
+                    <div class="box" style="text-align:center;border-color:var(--rose)">
+                        <i class="fa-solid fa-ban" style="font-size:32px;color:var(--rose);margin-bottom:8px"></i>
+                        <h4 style="color:var(--rose)">Withdrawal Suspended</h4>
+                        <p style="font-size:11px;color:var(--text-muted);margin:8px 0">Withdrawal functionality has been disabled for this account by customer support.</p>
+                    </div>`;
+                return;
+            }
+
+            const hasStock = curUser.investments && Object.keys(curUser.investments).length > 0;
+            if(!hasStock) {
+                box.innerHTML = `
+                    <div class="box" style="text-align:center">
+                        <i class="fa-solid fa-lock" style="font-size:32px;color:var(--rose);margin-bottom:8px"></i>
+                        <h4 style="font-size:14px;font-weight:800">Withdrawal Locked</h4>
+                        <p style="font-size:11px;color:var(--text-muted);margin:8px 0">Please stake at least one Redmix VIP package to activate withdrawals.</p>
+                        <button class="btn-gold" onclick="nav('dashboard')">View VIP Packages</button>
+                    </div>`;
+            } else {
+                box.innerHTML = `
+                    <div class="box">
+                        <div class="wd-method-grid">
+                            <button type="button" class="wd-method-btn ${selectedWithdrawMethod === 'bKash' ? 'active-bkash' : ''}" onclick="setWithdrawMethod('bKash')">
+                                <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:#e2136e;color:#fff;font-size:10px;line-height:20px;text-align:center;font-weight:800">bK</span>
+                                <span>bKash Personal</span>
+                            </button>
+                            <button type="button" class="wd-method-btn ${selectedWithdrawMethod === 'Nagad' ? 'active-nagad' : ''}" onclick="setWithdrawMethod('Nagad')">
+                                <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#f7921e,#ea1d24);color:#fff;font-size:10px;line-height:20px;text-align:center;font-weight:800">ন</span>
+                                <span>Nagad Personal</span>
+                            </button>
+                        </div>
+
+                        <div class="input-group">
+                            <label>${selectedWithdrawMethod} Personal Account Number</label>
+                            <input type="tel" id="w-acc" placeholder="01XXXXXXXXX" style="width:100%;padding:11px;background:#080d1a;border:1.5px solid ${selectedWithdrawMethod === 'Nagad' ? '#f7921e' : '#e2136e'};border-radius:10px;color:#fff;outline:none">
+                        </div>
+                        <div class="input-group">
+                            <label>Withdrawal Amount (Min ৳400)</label>
+                            <input type="number" id="w-amt" placeholder="৳ Amount (Minimum 400)" style="width:100%;padding:11px;background:#080d1a;border:1px solid var(--card-border);border-radius:10px;color:#fff;outline:none">
+                        </div>
+                        <div class="input-group">
+                            <label>6-Digit Payment PIN</label>
+                            <input type="password" id="w-pin" maxlength="6" placeholder="Enter PIN" style="width:100%;padding:11px;background:#080d1a;border:1px solid var(--card-border);border-radius:10px;color:#fff;outline:none">
+                        </div>
+                        <button class="btn-green" style="${selectedWithdrawMethod === 'Nagad' ? 'background:linear-gradient(135deg, #f7921e, #ea1d24)' : ''}" onclick="submitWithdraw()">
+                            Confirm ${selectedWithdrawMethod} Withdrawal
+                        </button>
+                    </div>`;
+            }
+        }
+
+        function submitWithdraw() {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            const acc = cleanPhone(document.getElementById('w-acc').value);
+            const a = parseFloat(document.getElementById('w-amt').value);
+            const pin = document.getElementById('w-pin').value.trim();
+
+            if(curUser.withdrawAllowed === false) {
+                alert('⚠️ Your account withdrawal is currently suspended. Please contact administration.');
+                return;
+            }
+
+            if(!acc || acc.length < 11) { alert(`Please enter a valid 11-digit ${selectedWithdrawMethod} Personal number.`); return; }
+            if(!a || a < 400) { alert('Minimum withdrawal amount is ৳ 400.'); return; }
+            if(a > Number(curUser.bal || 0)) { alert('Insufficient balance in your account!'); return; }
+            if(pin !== curUser.pin) { alert('Incorrect payment PIN!'); return; }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                curUser.bal = +(Number(curUser.bal || 0) - a).toFixed(2);
+                usersDB[currentUserPhone] = curUser;
+                setDB('USERS', usersDB);
+
+                addTx('withdraw', `Withdrawal to ${selectedWithdrawMethod} (${acc})`, `- ৳${a}`, 'pending', {
+                    userPhone: currentUserPhone,
+                    amountNum: a,
+                    targetNum: acc,
+                    method: selectedWithdrawMethod
+                });
+
+                syncUI();
+                showToast(`${selectedWithdrawMethod} withdrawal request submitted! Guaranteed within 24 hours.`);
+                setTimeout(() => nav('dashboard'), 1000);
+            }, 1800);
+        }
+
+        // ================= DYNAMIC ৳400 REFERRAL CLAIM ENGINE =================
+        function countActiveReferrals(phone, usersDB) {
+            let activeCount = 0;
+            for(let p in usersDB) {
+                if(usersDB[p] && usersDB[p].leader === phone) {
+                    const inv = usersDB[p].investments;
+                    if(inv && typeof inv === 'object' && Object.keys(inv).filter(k => inv[k]).length > 0) {
+                        activeCount++;
+                    }
+                }
+            }
+            return activeCount;
+        }
+
+        function renderInvite() {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone] || {};
+
+            const code = curUser.inviteCode || `REDMIX-${curUser.idCode}`;
+            document.getElementById('ref-code').textContent = code;
+            document.getElementById('ref-my-id').textContent = curUser.idCode || '000000';
+            
+            const baseUrl = window.location.origin + window.location.pathname;
+            const fullRefUrl = `${baseUrl}?redmix_invite=${encodeURIComponent(code)}`;
+            document.getElementById('ref-url').value = fullRefUrl;
+
+            // Compute active and claimable referrals
+            const totalActive = countActiveReferrals(currentUserPhone, usersDB);
+            const claimedCount = Number(curUser.claimedRefRewardsCount || 0);
+            const availableCount = Math.max(0, totalActive - claimedCount);
+
+            document.getElementById('ref-stat-active').textContent = `${totalActive} জন`;
+            document.getElementById('ref-stat-claimed').textContent = `${claimedCount} বার`;
+            document.getElementById('ref-stat-available').textContent = `${availableCount} টি (৳${availableCount * 400}.00)`;
+
+            const claimWrap = document.getElementById('ref-claim-btn-wrap');
+            if(availableCount > 0) {
+                claimWrap.innerHTML = `
+                    <button class="btn-claim-ref active" onclick="claimSingleReferralReward()">
+                        <i class="fa-solid fa-gift"></i> ক্লাইম করুন ৪০০ টাকা (৳400 Claim Now)
+                    </button>
+                `;
+            } else {
+                claimWrap.innerHTML = `
+                    <button class="btn-claim-ref disabled">
+                        <i class="fa-solid fa-lock"></i> কোনো সক্রিয় রেফার বাকি নেই
+                    </button>
+                    <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:6px;">
+                        শর্ত: বন্ধুকে রেফার করুন এবং সে পণ্য কিনলে তবেই ৪০০ টাকা ক্লাইম করতে পারবেন।
+                    </span>
+                `;
+            }
+
+            // Populate Team Members List
+            let totalMembers = 0;
+            const teamListWrap = document.getElementById('team-list');
+            teamListWrap.innerHTML = '';
+
+            for(let p in usersDB) {
+                if(usersDB[p] && usersDB[p].leader === currentUserPhone) {
+                    totalMembers++;
+                    const hasProduct = usersDB[p].investments && Object.keys(usersDB[p].investments).filter(k => usersDB[p].investments[k]).length > 0;
+                    teamListWrap.innerHTML += `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                            <div style="text-align:left">
+                                <span style="color:#fff;font-weight:700;font-size:12px">${usersDB[p].name || 'Member'}</span>
+                                <span style="display:block;font-size:10px;color:var(--cyan);font-family:'JetBrains Mono'">ID: ${usersDB[p].idCode || '000000'}</span>
+                            </div>
+                            <strong style="font-size:11px;color:${hasProduct ? 'var(--emerald)' : 'var(--rose)'}">
+                                ${hasProduct ? '<i class="fa-solid fa-circle-check"></i> VIP সক্রিয়' : '<i class="fa-solid fa-circle-xmark"></i> পণ্য কেনেনি'}
+                            </strong>
+                        </div>`;
+                }
+            }
+            if(!totalMembers) teamListWrap.innerHTML = 'এখনো কোনো টিম মেম্বার যুক্ত হয়নি।';
+        }
+
+        // Single Referral ৳400 Claim Action
+        function claimSingleReferralReward() {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+            if(!curUser) return;
+
+            const totalActive = countActiveReferrals(currentUserPhone, usersDB);
+            let claimedCount = Number(curUser.claimedRefRewardsCount || 0);
+
+            if(claimedCount >= totalActive) {
+                alert('⚠️ আপনার কাছে কোনো ক্লেইম করার মতো সক্রিয় রেফারেল নেই! রেফারকৃত বন্ধুকে VIP প্যাকেজ চালু করতে বলুন।');
+                return;
+            }
+
+            // Claim 1 referral (৳400)
+            curUser.claimedRefRewardsCount = claimedCount + 1;
+            curUser.bal = +(Number(curUser.bal || 0) + 400.00).toFixed(2);
+            usersDB[currentUserPhone] = curUser;
+            setDB('USERS', usersDB);
+
+            addTx('bonus', 'সরাসরি সক্রিয় রেফারেল রিওয়ার্ড', '+ ৳400.00', 'approved');
+            showToast('🎉 সফল! ৪০০ টাকা রেফারেল বোনাস ওয়ালেটে যুক্ত হয়েছে!');
+            renderInvite();
+            syncUI();
+        }
+
+        function copyRef() { copyText(document.getElementById('ref-url').value, '✅ Redmix referral link copied!'); }
+        function shareRefWhatsApp() { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(document.getElementById('ref-url').value)}`, '_blank'); }
+        function shareRefTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(document.getElementById('ref-url').value)}`, '_blank'); }
+
+        // DAILY FREE SIGN-IN (৳30 TK)
+        function claimDaily() {
+            const today = new Date().toDateString();
+            const lastSign = localStorage.getItem(DB_PREFIX + 'LAST_SIGNIN_' + currentUserPhone);
+            if(lastSign === today) {
+                alert("You have already claimed today's daily sign-in reward!");
+                closeModal('m-signin');
+                return;
+            }
+
+            const usersDB = getDB('USERS', {});
+            usersDB[currentUserPhone].bal = +(Number(usersDB[currentUserPhone].bal || 0) + 30).toFixed(2);
+            setDB('USERS', usersDB);
+            localStorage.setItem(DB_PREFIX + 'LAST_SIGNIN_' + currentUserPhone, today);
+
+            addTx('bonus', 'Daily Sign-in Reward', '+ ৳30.00', 'approved');
+            showToast('🎉 Free ৳30.00 reward added to wallet!');
+            closeModal('m-signin');
+            syncUI();
+        }
+
+        function updatePass(type) {
+            const usersDB = getDB('USERS', {});
+            const curUser = usersDB[currentUserPhone];
+
+            if(type === 'password') {
+                const oldP = document.getElementById('old-p').value.trim();
+                const newP = document.getElementById('new-p').value.trim();
+                if(oldP !== curUser.pass) { alert('Previous password is incorrect!'); return; }
+                if(newP.length < 6) { alert('New password must be at least 6 characters!'); return; }
+                curUser.pass = newP;
+                usersDB[currentUserPhone] = curUser;
+                setDB('USERS', usersDB);
+                showToast('✅ Password changed successfully!');
+                closeModal('m-pass');
+            } else {
+                const oldPin = document.getElementById('old-pin').value.trim();
+                const newPin = document.getElementById('new-pin').value.trim();
+                if(oldPin !== curUser.pin) { alert('Current PIN is incorrect!'); return; }
+                if(newPin.length !== 6) { alert('New PIN must be exactly 6 digits!'); return; }
+                curUser.pin = newPin;
+                usersDB[currentUserPhone] = curUser;
+                setDB('USERS', usersDB);
+                showToast('✅ Payment PIN updated successfully!');
+                closeModal('m-pin');
+            }
+        }
+
+        // TRANSACTION ENGINE
+        function addTx(type, title, amount, status = 'pending', meta = {}) {
+            addSpecificTx(currentUserPhone, type, title, amount, status, meta);
+        }
+
+        function addSpecificTx(phone, type, title, amount, status = 'pending', meta = {}) {
+            const allTx = getDB('TRANSACTIONS', []);
+            const now = new Date();
+            allTx.unshift({
+                id: 'TX' + Date.now() + Math.floor(Math.random() * 999),
+                userPhone: phone,
+                type: type,
+                title: title,
+                amount: amount,
+                status: status,
+                date: now.toLocaleDateString('en-GB'),
+                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                ...meta
+            });
+            setDB('TRANSACTIONS', allTx);
+            renderTxList();
+        }
+
+        function renderTxList() {
+            const list = document.getElementById('tx-list');
+            if(!list) return;
+            const allTx = getDB('TRANSACTIONS', []);
+            const userTx = allTx.filter(x => x.userPhone === currentUserPhone);
+
+            if(!userTx.length) {
+                list.innerHTML = '<div style="text-align:center;padding:15px">No transaction history found.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            userTx.forEach(item => {
+                list.innerHTML += `
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+                        <div>
+                            <div style="font-weight:700;color:#fff">${item.title}</div>
+                            <div style="font-size:9px;color:var(--text-muted)">${item.date} &bull; ${item.time} &bull; ${item.status.toUpperCase()}</div>
+                        </div>
+                        <strong style="color:${item.amount.includes('+') ? 'var(--emerald)' : 'var(--rose)'};font-size:12px">${item.amount}</strong>
+                    </div>`;
+            });
+        }
+
+        function openModal(id) { 
+            if(id === 'm-notif') renderTxList();
+            document.getElementById(id).style.display = 'flex'; 
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ================= ADMIN PANEL CONTROLLER =================
+        function switchAdminTab(t) {
+            activeAdminTab = t;
+            document.querySelectorAll('.adm-nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('at-' + t).classList.add('active');
+            renderAdminPanel();
+        }
+
+        function toggleWithdrawStatus() {
+            const settings = getDB('SETTINGS', { withdrawEnabled: true });
+            settings.withdrawEnabled = !settings.withdrawEnabled;
+            setDB('SETTINGS', settings);
+            renderAdminPanel();
+            showToast(settings.withdrawEnabled ? 'Global Withdrawals Enabled' : 'Global Withdrawals Disabled');
+        }
+
+        function renderAdminPanel() {
+            const usersDB = getDB('USERS', {});
+            const allTx = getDB('TRANSACTIONS', []);
+            const settings = getDB('SETTINGS', { withdrawEnabled: true });
+
+            const searchInput = document.getElementById('adm-search-input');
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+            const admWdTxt = document.getElementById('adm-wd-status-txt');
+            if(admWdTxt) {
+                admWdTxt.textContent = settings.withdrawEnabled ? 'GATEWAY: ACTIVE' : 'GATEWAY: DISABLED';
+                admWdTxt.style.color = settings.withdrawEnabled ? 'var(--emerald)' : 'var(--rose)';
+            }
+
+            const userKeys = Object.keys(usersDB);
+            const pendingDep = allTx.filter(x => x.type === 'deposit' && x.status === 'pending');
+            const pendingWd = allTx.filter(x => x.type === 'withdraw' && x.status === 'pending');
+
+            const uCnt = document.getElementById('adm-user-cnt'); if(uCnt) uCnt.textContent = userKeys.length;
+            const dCnt = document.getElementById('adm-dep-cnt'); if(dCnt) dCnt.textContent = pendingDep.length;
+            const wCnt = document.getElementById('adm-wd-cnt'); if(wCnt) wCnt.textContent = pendingWd.length;
+
+            const c = document.getElementById('adm-content');
+            if(!c) return;
+            c.innerHTML = '';
+
+            // 1. DEPOSITS
+            if(activeAdminTab === 'dep') {
+                let depTx = allTx.filter(x => x.type === 'deposit');
+                if(query) {
+                    depTx = depTx.filter(d => {
+                        const u = usersDB[d.userPhone] || {};
+                        return (u.name && u.name.toLowerCase().includes(query)) ||
+                               (d.userPhone && d.userPhone.includes(query)) ||
+                               (d.trxId && d.trxId.toLowerCase().includes(query)) ||
+                               (u.idCode && u.idCode.includes(query));
+                    });
+                }
+                if(!depTx.length) { c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No deposit records found.</div>'; return; }
+                depTx.forEach(d => {
+                    const u = usersDB[d.userPhone] || {};
+                    const method = d.method || (d.title && d.title.includes('Nagad') ? 'Nagad' : 'bKash');
+                    const isNagad = method === 'Nagad';
+
+                    c.innerHTML += `
+                        <div class="admin-user-card" style="border-left-color:${d.status === 'pending' ? 'var(--redmix-primary)' : d.status === 'approved' ? 'var(--emerald)' : 'var(--rose)'}">
+                            <div class="admin-user-row">
+                                <strong style="color:#fff"><i class="fa-solid fa-user-circle"></i> ${u.name || 'User'} (${d.userPhone})</strong>
+                                <span style="color:var(--redmix-primary);font-weight:800">${d.amount}</span>
+                            </div>
+                            <div style="background:#070b14;padding:8px;border-radius:8px;font-size:10px">
+                                <div style="margin-bottom:3px">
+                                    <span class="adm-badge" style="background:${isNagad ? 'rgba(247,146,30,0.2)' : 'rgba(226,19,110,0.2)'};color:${isNagad ? '#f7921e' : '#e2136e'};border:1px solid ${isNagad ? '#f7921e' : '#e2136e'};margin-right:6px">
+                                        ${method}
+                                    </span>
+                                    TrxID: <strong style="color:#38bdf8">${d.trxId || 'N/A'}</strong>
+                                </div>
+                                <div>Time: ${d.date} at ${d.time} | Status: <strong style="color:#fff">${d.status.toUpperCase()}</strong></div>
+                            </div>
+                            ${d.status === 'pending' ? `
+                            <div class="adm-action-grid">
+                                <button class="adm-btn-toggle" style="background:var(--emerald);color:#fff" onclick="adminApproveDeposit('${d.id}')">
+                                    <i class="fa-solid fa-check"></i> Approve
+                                </button>
+                                <button class="adm-btn-toggle" style="background:#e11d48;color:#fff" onclick="adminRejectTx('${d.id}')">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </button>
+                            </div>` : ''}
+                        </div>`;
+                });
+            }
+
+            // 2. WITHDRAWALS
+            if(activeAdminTab === 'wd') {
+                let wdTx = allTx.filter(x => x.type === 'withdraw');
+                if(query) {
+                    wdTx = wdTx.filter(w => {
+                        const u = usersDB[w.userPhone] || {};
+                        return (u.name && u.name.toLowerCase().includes(query)) ||
+                               (w.userPhone && w.userPhone.includes(query)) ||
+                               (w.targetNum && w.targetNum.includes(query)) ||
+                               (u.idCode && u.idCode.includes(query));
+                    });
+                }
+                if(!wdTx.length) { c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No withdrawal requests found.</div>'; return; }
+                wdTx.forEach(w => {
+                    const u = usersDB[w.userPhone] || {};
+                    const method = w.method || (w.title && w.title.includes('Nagad') ? 'Nagad' : 'bKash');
+                    const isNagad = method === 'Nagad';
+
+                    c.innerHTML += `
+                        <div class="admin-user-card" style="border-left-color:var(--rose)">
+                            <div class="admin-user-row">
+                                <strong style="color:#fff">${u.name || 'User'} (${w.userPhone})</strong>
+                                <span style="color:var(--rose);font-weight:800">${w.amount}</span>
+                            </div>
+                            <div style="background:#070b14;padding:8px;border-radius:8px;font-size:10px">
+                                <div>
+                                    <span class="adm-badge" style="background:${isNagad ? 'rgba(247,146,30,0.2)' : 'rgba(226,19,110,0.2)'};color:${isNagad ? '#f7921e' : '#e2136e'};border:1px solid ${isNagad ? '#f7921e' : '#e2136e'};margin-right:6px">
+                                        ${method}
+                                    </span>
+                                    Target: <strong style="color:var(--redmix-primary)">${w.targetNum}</strong>
+                                </div>
+                                <div style="margin-top:3px">Status: ${w.status.toUpperCase()}</div>
+                            </div>
+                            ${w.status === 'pending' ? `
+                            <div class="adm-action-grid">
+                                <button class="adm-btn-toggle" style="background:var(--emerald);color:#fff" onclick="adminApproveWithdraw('${w.id}')">
+                                    Approve & Pay
+                                </button>
+                                <button class="adm-btn-toggle" style="background:#e11d48;color:#fff" onclick="adminRejectTx('${w.id}')">
+                                    Reject & Refund
+                                </button>
+                            </div>` : ''}
+                        </div>`;
+                });
+            }
+
+            // 3. USERS
+            if(activeAdminTab === 'users') {
+                let filteredKeys = userKeys;
+                if(query) {
+                    filteredKeys = userKeys.filter(p => {
+                        const u = usersDB[p];
+                        if(!u) return false;
+                        return (u.name && u.name.toLowerCase().includes(query)) ||
+                               (u.phone && u.phone.includes(query)) ||
+                               (u.idCode && u.idCode.includes(query));
+                    });
+                }
+
+                if(!filteredKeys.length) { c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No registered users found.</div>'; return; }
+                
+                c.innerHTML += `<div style="font-size:11px;color:var(--redmix-primary);margin-bottom:8px;text-align:center;">✦ Tap any user to view file, manage products & permissions ✦</div>`;
+
+                filteredKeys.forEach(p => {
+                    const u = usersDB[p] || {};
+                    const isWdOk = u.withdrawAllowed !== false;
+                    const prodCount = (u.investments && typeof u.investments === 'object') ? Object.keys(u.investments).filter(k => u.investments[k]).length : 0;
+                    const safeKey = String(p).replace(/['"]/g, '');
+
+                    c.innerHTML += `
+                        <div class="admin-user-card" onclick="openUserDossier('${safeKey}')">
+                            <div class="admin-user-row">
+                                <strong style="color:#fff;font-size:13px"><i class="fa-solid fa-folder-open" style="color:var(--redmix-primary);margin-right:6px"></i> ${u.name || 'User'}</strong>
+                                <div>
+                                    <span class="adm-badge" style="background:rgba(255,45,85,0.15);color:#ff2d55;border:1px solid rgba(255,45,85,0.3);margin-right:4px;">PROD: ${prodCount}</span>
+                                    <span class="adm-badge ${isWdOk ? 'adm-badge-active' : 'adm-badge-blocked'}" style="margin-right:4px;">WD: ${isWdOk ? 'ON' : 'OFF'}</span>
+                                    <span class="adm-badge ${u.blocked ? 'adm-badge-blocked' : 'adm-badge-active'}">${u.blocked ? 'BLOCKED' : 'ACTIVE'}</span>
+                                </div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:4px">
+                                <span>ID: <strong style="color:#38bdf8;font-family:'JetBrains Mono'">${u.idCode || '000000'}</strong></span>
+                                <span>Balance: <strong style="color:var(--redmix-primary)">৳ ${Number(u.bal || 0).toFixed(2)}</strong></span>
+                            </div>
+                            <div style="font-size:10px;color:#94a3b8;border-top:1px dashed rgba(255,255,255,0.08);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between">
+                                <span>Phone: ${u.phone || p}</span>
+                                <span style="color:var(--cyan)">Tap to manage &rarr;</span>
+                            </div>
+                        </div>`;
+                });
+            }
+        }
+
+        // ================= USER DOSSIER (INDIVIDUAL USER FILE) =================
+        function openUserDossier(phoneKey) {
+            try {
+                const usersDB = getDB('USERS', {});
+                const allTx = getDB('TRANSACTIONS', []);
+
+                let u = usersDB[phoneKey];
+                let actualPhone = phoneKey;
+
+                if(!u) {
+                    for(let k in usersDB) {
+                        if(usersDB[k] && (usersDB[k].phone === phoneKey || k === cleanPhone(phoneKey))) {
+                            u = usersDB[k];
+                            actualPhone = k;
+                            break;
+                        }
+                    }
+                }
+
+                if(!u) { alert('User record could not be found!'); return; }
+
+                const userPhoneNum = u.phone || actualPhone;
+                const isWdAllowed = u.withdrawAllowed !== false;
+
+                const userTx = Array.isArray(allTx) ? allTx.filter(x => x && (x.userPhone === userPhoneNum || x.userPhone === actualPhone)) : [];
+                const userDeposits = userTx.filter(x => x && x.type === 'deposit');
+                const userWithdraws = userTx.filter(x => x && x.type === 'withdraw');
+
+                let depHtml = '';
+                if(!userDeposits.length) {
+                    depHtml = '<div style="font-size:10px;color:#94a3b8">No deposit records.</div>';
+                } else {
+                    userDeposits.forEach(d => {
+                        const m = d.method || (d.title && d.title.includes('Nagad') ? 'Nagad' : 'bKash');
+                        depHtml += `
+                            <div style="background:#090e1a;padding:6px 8px;border-radius:6px;margin-bottom:4px;font-size:10px;border-left:2px solid var(--emerald)">
+                                <div style="display:flex;justify-content:space-between">
+                                    <strong style="color:#34d399">[${m}] ${d.amount || '0'}</strong>
+                                    <span style="color:#cbd5e1">${d.date || ''} (${d.time || ''})</span>
+                                </div>
+                                <div style="color:#94a3b8;font-size:9px">TrxID: ${d.trxId || 'N/A'} | Status: <strong>${(d.status || '').toUpperCase()}</strong></div>
+                            </div>`;
+                    });
+                }
+
+                let wdHtml = '';
+                if(!userWithdraws.length) {
+                    wdHtml = '<div style="font-size:10px;color:#94a3b8">No withdrawal records.</div>';
+                } else {
+                    userWithdraws.forEach(w => {
+                        const m = w.method || (w.title && w.title.includes('Nagad') ? 'Nagad' : 'bKash');
+                        wdHtml += `
+                            <div style="background:#090e1a;padding:6px 8px;border-radius:6px;margin-bottom:4px;font-size:10px;border-left:2px solid var(--rose)">
+                                <div style="display:flex;justify-content:space-between">
+                                    <strong style="color:var(--rose)">[${m}] ${w.amount || '0'}</strong>
+                                    <span style="color:#cbd5e1">${w.date || ''} (${w.time || ''})</span>
+                                </div>
+                                <div style="color:#94a3b8;font-size:9px">Account: ${w.targetNum || 'N/A'} | Status: <strong>${(w.status || '').toUpperCase()}</strong></div>
+                            </div>`;
+                    });
+                }
+
+                let productsHtml = '';
+                let validProductCount = 0;
+
+                if(u.investments && typeof u.investments === 'object') {
+                    const invKeys = Object.keys(u.investments);
+                    invKeys.forEach(pId => {
+                        const prod = u.investments[pId];
+                        if(!prod || typeof prod !== 'object') return;
+                        validProductCount++;
+                        const isProdActive = prod.status !== 'paused';
+                        productsHtml += `
+                            <div style="background:#090e1a;padding:8px 10px;border-radius:8px;margin-bottom:6px;font-size:11px;border:1px solid rgba(255,45,85,0.2);display:flex;justify-content:space-between;align-items:center;">
+                                <div>
+                                    <strong style="color:#fff;display:block;">${prod.name || ('VIP #' + pId)}</strong>
+                                    <span style="font-size:9.5px;color:#94a3b8;">Daily: ৳${prod.profit || 0} | Status: <strong style="color:${isProdActive ? 'var(--emerald)' : 'var(--rose)'}">${isProdActive ? 'ACTIVE' : 'PAUSED'}</strong></span>
+                                </div>
+                                <button class="adm-btn-toggle" style="background:${isProdActive ? '#e11d48' : 'var(--emerald)'};color:#fff;padding:5px 10px;font-size:9.5px;" onclick="adminToggleProduct('${actualPhone}', '${pId}')">
+                                    <i class="fa-solid fa-power-off"></i> ${isProdActive ? 'Pause' : 'Activate'}
+                                </button>
+                            </div>
+                        `;
+                    });
+                }
+
+                if(!validProductCount) {
+                    productsHtml = '<div style="font-size:10px;color:#94a3b8">No staked packages yet.</div>';
+                }
+
+                const box = document.getElementById('m-user-dossier-content');
+                box.innerHTML = `
+                    <button class="modal-close" onclick="closeModal('m-user-dossier')"><i class="fa-solid fa-xmark"></i></button>
+                    <div style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;margin-bottom:12px">
+                        <div style="width:48px;height:48px;border-radius:50%;background:var(--gold-gradient);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px">
+                            <i class="fa-solid fa-user-secret"></i>
+                        </div>
+                        <h3 style="font-size:16px;color:#fff">${u.name || 'User'} (ID: ${u.idCode || '000000'})</h3>
+                        <span style="font-size:10.5px;color:var(--text-muted)">Registered: ${u.registeredAt || 'N/A'}</span>
+                    </div>
+
+                    <div style="background:#080d1a;padding:10px;border-radius:10px;font-size:11px;margin-bottom:12px;border:1px solid rgba(255,45,85,0.25)">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="color:#94a3b8">Mobile Number:</span>
+                            <strong style="color:#fff;font-family:'JetBrains Mono'">${userPhoneNum}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="color:#94a3b8">Login Password:</span>
+                            <strong style="color:var(--redmix-primary);font-family:'JetBrains Mono'">${u.pass || 'N/A'}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="color:#94a3b8">Payment PIN:</span>
+                            <strong style="color:#38bdf8;font-family:'JetBrains Mono'">${u.pin || 'N/A'}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="color:#94a3b8">Withdrawal Status:</span>
+                            <strong style="color:${isWdAllowed ? 'var(--emerald)' : 'var(--rose)'};font-weight:800">${isWdAllowed ? 'Enabled' : 'Disabled'}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="color:#94a3b8">Account Balance:</span>
+                            <strong style="color:var(--emerald);font-size:13px">৳ ${Number(u.bal || 0).toFixed(2)}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#94a3b8">Invite Code:</span>
+                            <strong style="color:#ff758c">${u.inviteCode || 'N/A'}</strong>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px">
+                        <div style="font-size:11px;color:var(--redmix-primary);font-weight:700;margin-bottom:4px"><i class="fa-solid fa-boxes-stacked"></i> Staked Packages (${validProductCount}):</div>
+                        <div style="max-height:110px;overflow-y:auto">${productsHtml}</div>
+                    </div>
+
+                    <div style="margin-bottom:12px">
+                        <div style="font-size:11px;color:var(--emerald);font-weight:700;margin-bottom:4px"><i class="fa-solid fa-wallet"></i> Deposit Records:</div>
+                        <div style="max-height:75px;overflow-y:auto">${depHtml}</div>
+                    </div>
+
+                    <div style="margin-bottom:14px">
+                        <div style="font-size:11px;color:var(--rose);font-weight:700;margin-bottom:4px"><i class="fa-solid fa-money-bill-transfer"></i> Withdrawal Records:</div>
+                        <div style="max-height:75px;overflow-y:auto">${wdHtml}</div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+                        <button class="adm-btn-toggle" style="background:#1e293b;color:var(--redmix-primary);border:1px solid var(--redmix-primary)" onclick="adminChangeUserBal('${actualPhone}')">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit Balance
+                        </button>
+                        <button class="adm-btn-toggle" style="background:${isWdAllowed ? '#e11d48' : 'var(--emerald)'};color:#fff" onclick="adminToggleUserWithdraw('${actualPhone}')">
+                            <i class="fa-solid fa-money-bill-transfer"></i> ${isWdAllowed ? 'Disable WD' : 'Enable WD'}
+                        </button>
+                    </div>
+                    <button class="adm-btn-toggle" style="width:100%;background:${u.blocked ? 'var(--emerald)' : '#e11d48'};color:#fff" onclick="adminToggleBlockUser('${actualPhone}')">
+                        <i class="fa-solid fa-user-lock"></i> ${u.blocked ? 'Unblock User Account' : 'Block Entire Account'}
+                    </button>
+                `;
+                openModal('m-user-dossier');
+            } catch(err) {
+                console.error("Dossier exception:", err);
+            }
+        }
+
+        function adminToggleProduct(phone, pId) {
+            const usersDB = getDB('USERS', {});
+            if(!usersDB[phone] || !usersDB[phone].investments || !usersDB[phone].investments[pId]) return;
+            const currentStatus = usersDB[phone].investments[pId].status || 'active';
+            usersDB[phone].investments[pId].status = (currentStatus === 'paused') ? 'active' : 'paused';
+            setDB('USERS', usersDB);
+            showToast(usersDB[phone].investments[pId].status === 'active' ? '✅ Product activated for user!' : '🚫 Product paused for user!');
+            openUserDossier(phone);
+            renderAdminPanel();
+            if(phone === currentUserPhone) syncUI();
+        }
+
+        function adminToggleUserWithdraw(phone) {
+            const usersDB = getDB('USERS', {});
+            if(!usersDB[phone]) return;
+            usersDB[phone].withdrawAllowed = (usersDB[phone].withdrawAllowed === false) ? true : false;
+            setDB('USERS', usersDB);
+            showToast(usersDB[phone].withdrawAllowed ? '✅ User withdrawal enabled' : '🚫 User withdrawal suspended');
+            openUserDossier(phone);
+            renderAdminPanel();
+        }
+
+        function adminChangeUserBal(phone) {
+            const usersDB = getDB('USERS', {});
+            if(!usersDB[phone]) return;
+            const newBal = prompt(`Enter new balance for user (Current: ৳${usersDB[phone].bal}):`, usersDB[phone].bal);
+            if(newBal !== null && !isNaN(newBal)) {
+                usersDB[phone].bal = +(parseFloat(newBal).toFixed(2));
+                setDB('USERS', usersDB);
+                showToast('✅ User balance updated successfully!');
+                openUserDossier(phone);
+                renderAdminPanel();
+                if(phone === currentUserPhone) syncUI();
+            }
+        }
+
+        function adminToggleBlockUser(phone) {
+            const usersDB = getDB('USERS', {});
+            if(!usersDB[phone]) return;
+            usersDB[phone].blocked = !usersDB[phone].blocked;
+            setDB('USERS', usersDB);
+            showToast(usersDB[phone].blocked ? '🚫 Account blocked' : '✅ Account unblocked');
+            openUserDossier(phone);
+            renderAdminPanel();
+        }
+
+        function adminApproveDeposit(txId) {
+            const allTx = getDB('TRANSACTIONS', []);
+            const usersDB = getDB('USERS', {});
+            const tx = allTx.find(x => x.id === txId);
+            if(tx && tx.status === 'pending') {
+                tx.status = 'approved';
+                if(usersDB[tx.userPhone]) {
+                    usersDB[tx.userPhone].bal = +(Number(usersDB[tx.userPhone].bal || 0) + tx.amountNum).toFixed(2);
+                    setDB('USERS', usersDB);
+                }
+                setDB('TRANSACTIONS', allTx);
+                showToast(`✅ Deposit approved!`);
+                renderAdminPanel();
+                syncUI();
+            }
+        }
+
+        function adminApproveWithdraw(txId) {
+            const allTx = getDB('TRANSACTIONS', []);
+            const tx = allTx.find(x => x.id === txId);
+            if(tx && tx.status === 'pending') {
+                tx.status = 'approved';
+                setDB('TRANSACTIONS', allTx);
+                showToast(`✅ Withdrawal approved & completed!`);
+                renderAdminPanel();
+                syncUI();
+            }
+        }
+
+        function adminRejectTx(txId) {
+            const allTx = getDB('TRANSACTIONS', []);
+            const usersDB = getDB('USERS', {});
+            const tx = allTx.find(x => x.id === txId);
+            if(tx && tx.status === 'pending') {
+                tx.status = 'rejected';
+                if(tx.type === 'withdraw' && usersDB[tx.userPhone]) {
+                    usersDB[tx.userPhone].bal = +(Number(usersDB[tx.userPhone].bal || 0) + tx.amountNum).toFixed(2);
+                    setDB('USERS', usersDB);
+                }
+                setDB('TRANSACTIONS', allTx);
+                showToast(`❌ Request rejected & refunded`);
+                renderAdminPanel();
+                syncUI();
+            }
+        }
+
+        // SLIDER ANIMATION
+        let sIdx = 0;
+        setInterval(() => {
+            const sl = document.getElementById('slides');
+            if(sl) {
+                sIdx = (sIdx + 1) % 3;
+                sl.style.transform = `translateX(-${sIdx * 33.333}%)`;
+            }
+        }, 3400);
+
+        // INITIALIZE ON LOAD
+        window.onload = function() {
+            renderTxList();
+            updateLanguageUI();
+
+            const savedUser = cleanPhone(localStorage.getItem(DB_PREFIX + 'CURRENT_USER') || '');
+            const usersDB = getDB('USERS', {});
+
+            const pendingInviteCode = sessionStorage.getItem('REDMIX_PENDING_REF_CODE') || '';
+            if(pendingInviteCode) {
+                const inviteBox = document.getElementById('r-invite');
+                if(inviteBox) inviteBox.value = pendingInviteCode;
+                nav('auth');
+                switchAuth('reg');
+                showToast('🎉 Referral code attached! Please register');
+                return;
+            }
+
+            if(savedUser && usersDB[savedUser] && !usersDB[savedUser].blocked) {
+                currentUserPhone = savedUser;
+                nav('dashboard');
+            } else {
+                nav('auth');
+                switchAuth('login');
+            }
+        };
+    </script>
+</body>
+</html>
